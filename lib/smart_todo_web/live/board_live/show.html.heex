@@ -58,7 +58,7 @@
                   <button
                     phx-click="delete_list"
                     phx-value-id={list.id}
-                    data-confirm="Delete this list and all its tasks?"
+                    data-confirm="Delete this list and all its cards?"
                     class="text-error"
                   >
                     <.icon name="hero-trash" class="size-4" /> Delete
@@ -69,51 +69,51 @@
           </div>
         </div>
 
-        <%!-- Task cards --%>
+        <%!-- Cards --%>
         <div
-          id={"list-#{list.id}-tasks"}
+          id={"list-#{list.id}-cards"}
           phx-hook="Sortable"
           data-list-id={list.id}
           class="flex-1 overflow-y-auto p-2 space-y-2 min-h-[2rem]"
         >
           <div
-            :for={task <- list.tasks}
-            id={"task-#{task.id}"}
-            data-task-id={task.id}
+            :for={card <- list.cards}
+            id={"card-#{card.id}"}
+            data-card-id={card.id}
             class="card bg-base-100 shadow-sm cursor-grab active:cursor-grabbing"
           >
             <div class="card-body p-3">
               <div class="flex items-start justify-between gap-2">
-                <p class="text-sm font-medium">{task.title}</p>
+                <p class="text-sm font-medium">{card.title}</p>
                 <div class="flex gap-1 flex-shrink-0">
                   <button
                     class="btn btn-ghost btn-xs"
-                    phx-click="edit_task"
-                    phx-value-id={task.id}
+                    phx-click="edit_card"
+                    phx-value-id={card.id}
                   >
                     <.icon name="hero-pencil" class="size-3" />
                   </button>
                   <button
                     class="btn btn-ghost btn-xs text-error"
-                    phx-click="delete_task"
-                    phx-value-id={task.id}
-                    data-confirm="Delete this task?"
+                    phx-click="delete_card"
+                    phx-value-id={card.id}
+                    data-confirm="Delete this card?"
                   >
                     <.icon name="hero-trash" class="size-3" />
                   </button>
                 </div>
               </div>
-              <p :if={task.description} class="text-xs text-base-content/60 line-clamp-2">
-                {task.description}
+              <p :if={card.description} class="text-xs text-base-content/60 line-clamp-2">
+                {card.description}
               </p>
               <div class="flex flex-wrap gap-1 mt-1">
-                <span class={"badge badge-xs #{priority_badge_class(task.priority)}"}>
-                  {task.priority}
+                <span class={"badge badge-xs #{priority_badge_class(card.priority)}"}>
+                  {card.priority}
                 </span>
-                <span :if={task.due_date} class="badge badge-xs badge-outline">
-                  {Calendar.strftime(task.due_date, "%b %d")}
+                <span :if={card.due_date} class="badge badge-xs badge-outline">
+                  {Calendar.strftime(card.due_date, "%b %d")}
                 </span>
-                <span :for={label <- task.labels} class="badge badge-xs badge-neutral">
+                <span :for={label <- card.labels} class="badge badge-xs badge-neutral">
                   {label}
                 </span>
               </div>
@@ -121,34 +121,34 @@
           </div>
         </div>
 
-        <%!-- Add task form --%>
+        <%!-- Add card form --%>
         <div class="p-2">
-          <div :if={@adding_task_to == list.id}>
-            <.form for={@task_form} phx-submit="add_task" class="space-y-2">
-              <input type="hidden" name="task[list_id]" value={list.id} />
-              <input type="hidden" name="task[board_id]" value={@board.id} />
+          <div :if={@adding_card_to == list.id}>
+            <.form for={@card_form} phx-submit="add_card" class="space-y-2">
+              <input type="hidden" name="card[list_id]" value={list.id} />
+              <input type="hidden" name="card[board_id]" value={@board.id} />
               <input
                 type="text"
-                name="task[title]"
-                placeholder="Task title"
+                name="card[title]"
+                placeholder="Card title"
                 class="input input-sm input-bordered w-full"
                 phx-mounted={JS.dispatch("focus")}
               />
               <div class="flex gap-2">
                 <button type="submit" class="btn btn-primary btn-xs">Add</button>
-                <button type="button" class="btn btn-ghost btn-xs" phx-click="cancel_add_task">
+                <button type="button" class="btn btn-ghost btn-xs" phx-click="cancel_add_card">
                   Cancel
                 </button>
               </div>
             </.form>
           </div>
           <button
-            :if={@adding_task_to != list.id}
+            :if={@adding_card_to != list.id}
             class="btn btn-ghost btn-sm w-full justify-start"
-            phx-click="show_add_task"
+            phx-click="show_add_card"
             phx-value-list-id={list.id}
           >
-            <.icon name="hero-plus" class="size-4" /> Add a task
+            <.icon name="hero-plus" class="size-4" /> Add a card
           </button>
         </div>
       </div>
@@ -184,33 +184,33 @@
     </div>
   </div>
 
-  <%!-- Edit task modal --%>
+  <%!-- Edit card modal --%>
   <div
-    :if={@editing_task}
+    :if={@editing_card}
     class="modal modal-open"
-    phx-window-keydown="cancel_edit_task"
+    phx-window-keydown="cancel_edit_card"
     phx-key="Escape"
   >
     <div class="modal-box">
-      <h3 class="font-bold text-lg mb-4">Edit Task</h3>
-      <.form for={@task_form} phx-submit="update_task" class="space-y-4">
-        <.input field={@task_form[:title]} label="Title" />
-        <.input field={@task_form[:description]} type="textarea" label="Description" />
+      <h3 class="font-bold text-lg mb-4">Edit Card</h3>
+      <.form for={@card_form} phx-submit="update_card" class="space-y-4">
+        <.input field={@card_form[:title]} label="Title" />
+        <.input field={@card_form[:description]} type="textarea" label="Description" />
         <.input
-          field={@task_form[:priority]}
+          field={@card_form[:priority]}
           type="select"
           label="Priority"
           options={[Low: "low", Medium: "medium", High: "high", Urgent: "urgent"]}
         />
-        <.input field={@task_form[:due_date]} type="date" label="Due Date" />
+        <.input field={@card_form[:due_date]} type="date" label="Due Date" />
         <div class="modal-action">
           <button type="submit" class="btn btn-primary btn-sm">Save</button>
-          <button type="button" class="btn btn-ghost btn-sm" phx-click="cancel_edit_task">
+          <button type="button" class="btn btn-ghost btn-sm" phx-click="cancel_edit_card">
             Cancel
           </button>
         </div>
       </.form>
     </div>
-    <div class="modal-backdrop" phx-click="cancel_edit_task"></div>
+    <div class="modal-backdrop" phx-click="cancel_edit_card"></div>
   </div>
 </Layouts.board>

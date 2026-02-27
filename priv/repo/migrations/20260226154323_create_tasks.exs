@@ -1,8 +1,8 @@
-defmodule SmartTodo.Repo.Migrations.CreateTasks do
+defmodule SmartTodo.Repo.Migrations.CreateCards do
   use Ecto.Migration
 
   def change do
-    create table(:tasks) do
+    create table(:cards) do
       add :title, :string, null: false
       add :description, :string
       add :position, :integer, null: false, default: 0
@@ -16,8 +16,8 @@ defmodule SmartTodo.Repo.Migrations.CreateTasks do
       timestamps(type: :utc_datetime)
     end
 
-    create index(:tasks, [:list_id])
-    create index(:tasks, [:board_id])
-    create index(:tasks, [:archived_at])
+    create index(:cards, [:list_id])
+    create index(:cards, [:board_id])
+    create index(:cards, [:archived_at])
   end
 end

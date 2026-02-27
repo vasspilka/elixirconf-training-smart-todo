@@ -10,7 +10,7 @@ alias SmartTodo.Todos
 
 {:ok, done_list} = Todos.create_list(%{title: "Done", position: 2, board_id: board.id})
 
-Todos.create_task(%{
+Todos.create_card(%{
   title: "Set up project structure",
   description: "Initialize the Phoenix project with LiveView",
   position: 0,
@@ -20,7 +20,7 @@ Todos.create_task(%{
   board_id: board.id
 })
 
-Todos.create_task(%{
+Todos.create_card(%{
   title: "Design database schema",
   position: 1,
   priority: :urgent,
@@ -29,7 +29,7 @@ Todos.create_task(%{
   board_id: board.id
 })
 
-Todos.create_task(%{
+Todos.create_card(%{
   title: "Build board UI",
   description: "Create the main board view with drag and drop",
   position: 0,
@@ -39,7 +39,7 @@ Todos.create_task(%{
   board_id: board.id
 })
 
-Todos.create_task(%{
+Todos.create_card(%{
   title: "Add authentication",
   position: 1,
   priority: :low,
@@ -49,7 +49,7 @@ Todos.create_task(%{
   board_id: board.id
 })
 
-Todos.create_task(%{
+Todos.create_card(%{
   title: "Write README",
   position: 0,
   priority: :low,

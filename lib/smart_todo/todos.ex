@@ -2,7 +2,7 @@ defmodule SmartTodo.Todos do
   import Ecto.Query
 
   alias SmartTodo.Repo
-  alias SmartTodo.Todos.{Board, List, Task}
+  alias SmartTodo.Todos.{Board, List, Card}
 
   # Boards
 
@@ -59,62 +59,62 @@ defmodule SmartTodo.Todos do
     List.changeset(list, attrs)
   end
 
-  # Tasks
+  # Cards
 
-  def list_tasks(board_id) do
-    Task
+  def list_cards(board_id) do
+    Card
     |> where(board_id: ^board_id)
-    |> where([t], is_nil(t.archived_at))
+    |> where([c], is_nil(c.archived_at))
     |> order_by(:position)
     |> Repo.all()
   end
 
-  def get_task!(id), do: Repo.get!(Task, id)
+  def get_card!(id), do: Repo.get!(Card, id)
 
-  def create_task(attrs \\ %{}) do
-    %Task{}
-    |> Task.changeset(attrs)
+  def create_card(attrs \\ %{}) do
+    %Card{}
+    |> Card.changeset(attrs)
     |> Repo.insert()
   end
 
-  def update_task(%Task{} = task, attrs) do
-    task
-    |> Task.changeset(attrs)
+  def update_card(%Card{} = card, attrs) do
+    card
+    |> Card.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_task(%Task{} = task), do: Repo.delete(task)
+  def delete_card(%Card{} = card), do: Repo.delete(card)
 
-  def change_task(%Task{} = task, attrs \\ %{}) do
-    Task.changeset(task, attrs)
+  def change_card(%Card{} = card, attrs \\ %{}) do
+    Card.changeset(card, attrs)
   end
 
-  def move_task(%Task{} = task, list_id, position) do
-    task
-    |> Task.changeset(%{list_id: list_id, position: position})
+  def move_card(%Card{} = card, list_id, position) do
+    card
+    |> Card.changeset(%{list_id: list_id, position: position})
     |> Repo.update()
   end
 
-  def archive_task(%Task{} = task) do
-    task
-    |> Task.changeset(%{archived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+  def archive_card(%Card{} = card) do
+    card
+    |> Card.changeset(%{archived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
     |> Repo.update()
   end
 
-  def unarchive_task(%Task{} = task) do
-    task
-    |> Task.changeset(%{archived_at: nil})
+  def unarchive_card(%Card{} = card) do
+    card
+    |> Card.changeset(%{archived_at: nil})
     |> Repo.update()
   end
 
   # Reordering
 
-  def reorder_tasks(ordered_ids, list_id) do
+  def reorder_cards(ordered_ids, list_id) do
     Repo.transaction(fn ->
       ordered_ids
       |> Enum.with_index()
-      |> Enum.each(fn {task_id, index} ->
-        from(t in Task, where: t.id == ^task_id)
+      |> Enum.each(fn {card_id, index} ->
+        from(c in Card, where: c.id == ^card_id)
         |> Repo.update_all(set: [position: index, list_id: list_id])
       end)
     end)
@@ -123,10 +123,10 @@ defmodule SmartTodo.Todos do
   # Board loading
 
   def get_board_with_data!(id) do
-    tasks_query = from t in Task, where: is_nil(t.archived_at), order_by: t.position
+    cards_query = from c in Card, where: is_nil(c.archived_at), order_by: c.position
 
     Board
     |> Repo.get!(id)
-    |> Repo.preload(lists: {from(l in List, order_by: l.position), tasks: tasks_query})
+    |> Repo.preload(lists: {from(l in List, order_by: l.position), cards: cards_query})
   end
 end

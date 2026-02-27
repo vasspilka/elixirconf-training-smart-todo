@@ -2,7 +2,7 @@ defmodule SmartTodoWeb.BoardLive.Show do
   use SmartTodoWeb, :live_view
 
   alias SmartTodo.Todos
-  alias SmartTodo.Todos.{List, Task}
+  alias SmartTodo.Todos.{List, Card}
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -14,11 +14,11 @@ defmodule SmartTodoWeb.BoardLive.Show do
      |> assign(:board, board)
      |> assign(:adding_list, false)
      |> assign(:list_form, to_form(Todos.change_list(%List{}, %{board_id: board.id})))
-     |> assign(:adding_task_to, nil)
-     |> assign(:task_form, to_form(Todos.change_task(%Task{})))
+     |> assign(:adding_card_to, nil)
+     |> assign(:card_form, to_form(Todos.change_card(%Card{})))
      |> assign(:editing_list, nil)
-     |> assign(:editing_task, nil)
-     |> assign(:task_detail, nil)}
+     |> assign(:editing_card, nil)
+     |> assign(:card_detail, nil)}
   end
 
   # --- List events ---
@@ -80,27 +80,27 @@ defmodule SmartTodoWeb.BoardLive.Show do
     {:noreply, reload_board(socket)}
   end
 
-  # --- Task events ---
+  # --- Card events ---
 
-  def handle_event("show_add_task", %{"list-id" => list_id}, socket) do
+  def handle_event("show_add_card", %{"list-id" => list_id}, socket) do
     board = socket.assigns.board
-    form = to_form(Todos.change_task(%Task{}, %{list_id: list_id, board_id: board.id}))
+    form = to_form(Todos.change_card(%Card{}, %{list_id: list_id, board_id: board.id}))
 
     {:noreply,
      socket
-     |> assign(:adding_task_to, String.to_integer(list_id))
-     |> assign(:task_form, form)}
+     |> assign(:adding_card_to, String.to_integer(list_id))
+     |> assign(:card_form, form)}
   end
 
-  def handle_event("cancel_add_task", _params, socket) do
-    {:noreply, assign(socket, :adding_task_to, nil)}
+  def handle_event("cancel_add_card", _params, socket) do
+    {:noreply, assign(socket, :adding_card_to, nil)}
   end
 
-  def handle_event("add_task", %{"task" => params}, socket) do
+  def handle_event("add_card", %{"card" => params}, socket) do
     board = socket.assigns.board
     list_id = String.to_integer(params["list_id"])
     list = Enum.find(board.lists, &(&1.id == list_id))
-    position = if list, do: length(list.tasks), else: 0
+    position = if list, do: length(list.cards), else: 0
 
     params =
       Map.merge(params, %{
@@ -108,65 +108,65 @@ defmodule SmartTodoWeb.BoardLive.Show do
         "position" => to_string(position)
       })
 
-    case Todos.create_task(params) do
-      {:ok, _task} ->
+    case Todos.create_card(params) do
+      {:ok, _card} ->
         {:noreply,
          socket
          |> reload_board()
-         |> assign(:adding_task_to, nil)}
+         |> assign(:adding_card_to, nil)}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, :task_form, to_form(changeset))}
+        {:noreply, assign(socket, :card_form, to_form(changeset))}
     end
   end
 
-  def handle_event("edit_task", %{"id" => id}, socket) do
-    task = Todos.get_task!(id)
-    form = to_form(Todos.change_task(task))
-    {:noreply, assign(socket, editing_task: task, task_form: form)}
+  def handle_event("edit_card", %{"id" => id}, socket) do
+    card = Todos.get_card!(id)
+    form = to_form(Todos.change_card(card))
+    {:noreply, assign(socket, editing_card: card, card_form: form)}
   end
 
-  def handle_event("cancel_edit_task", _params, socket) do
-    {:noreply, assign(socket, :editing_task, nil)}
+  def handle_event("cancel_edit_card", _params, socket) do
+    {:noreply, assign(socket, :editing_card, nil)}
   end
 
-  def handle_event("update_task", %{"task" => params}, socket) do
-    task = socket.assigns.editing_task
+  def handle_event("update_card", %{"card" => params}, socket) do
+    card = socket.assigns.editing_card
 
-    case Todos.update_task(task, params) do
-      {:ok, _task} ->
+    case Todos.update_card(card, params) do
+      {:ok, _card} ->
         {:noreply,
          socket
          |> reload_board()
-         |> assign(:editing_task, nil)}
+         |> assign(:editing_card, nil)}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, :task_form, to_form(changeset))}
+        {:noreply, assign(socket, :card_form, to_form(changeset))}
     end
   end
 
-  def handle_event("delete_task", %{"id" => id}, socket) do
-    task = Todos.get_task!(id)
-    {:ok, _} = Todos.delete_task(task)
+  def handle_event("delete_card", %{"id" => id}, socket) do
+    card = Todos.get_card!(id)
+    {:ok, _} = Todos.delete_card(card)
     {:noreply, reload_board(socket)}
   end
 
   # --- Drag & drop ---
 
-  def handle_event("reorder_task", params, socket) do
-    %{"task_id" => task_id, "to_list_id" => to_list_id, "ordered_ids" => ordered_ids} = params
+  def handle_event("reorder_card", params, socket) do
+    %{"card_id" => card_id, "to_list_id" => to_list_id, "ordered_ids" => ordered_ids} = params
 
     ordered_ids = Enum.map(ordered_ids, &String.to_integer/1)
     to_list_id = String.to_integer(to_list_id)
-    task_id = String.to_integer(task_id)
+    card_id = String.to_integer(card_id)
 
-    task = Todos.get_task!(task_id)
+    card = Todos.get_card!(card_id)
 
-    if task.list_id != to_list_id do
-      Todos.update_task(task, %{list_id: to_list_id})
+    if card.list_id != to_list_id do
+      Todos.update_card(card, %{list_id: to_list_id})
     end
 
-    Todos.reorder_tasks(ordered_ids, to_list_id)
+    Todos.reorder_cards(ordered_ids, to_list_id)
 
     {:noreply, reload_board(socket)}
   end

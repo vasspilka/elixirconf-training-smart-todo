@@ -5,19 +5,19 @@ export default {
     const hook = this
 
     this.sortable = Sortable.create(this.el, {
-      group: "tasks",
+      group: "cards",
       animation: 150,
       ghostClass: "sortable-ghost",
       dragClass: "sortable-drag",
       onEnd(evt) {
-        const taskId = evt.item.dataset.taskId
+        const cardId = evt.item.dataset.cardId
         const toListId = evt.to.dataset.listId
         const orderedIds = Array.from(evt.to.children).map(
-          (el) => el.dataset.taskId
+          (el) => el.dataset.cardId
         )
 
-        hook.pushEvent("reorder_task", {
-          task_id: taskId,
+        hook.pushEvent("reorder_card", {
+          card_id: cardId,
           to_list_id: toListId,
           ordered_ids: orderedIds,
         })

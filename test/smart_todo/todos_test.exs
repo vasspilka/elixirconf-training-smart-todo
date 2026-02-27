@@ -2,7 +2,7 @@ defmodule SmartTodo.TodosTest do
   use SmartTodo.DataCase
 
   alias SmartTodo.Todos
-  alias SmartTodo.Todos.{Board, List, Task}
+  alias SmartTodo.Todos.{Board, List, Card}
 
   describe "boards" do
     test "list_boards/0 returns boards ordered by position" do
@@ -87,108 +87,108 @@ defmodule SmartTodo.TodosTest do
     end
   end
 
-  describe "tasks" do
+  describe "cards" do
     setup do
       {:ok, board} = Todos.create_board(%{title: "Board"})
       {:ok, list} = Todos.create_list(%{title: "List", position: 0, board_id: board.id})
       %{board: board, list: list}
     end
 
-    test "list_tasks/1 returns active tasks for a board", %{board: board, list: list} do
-      {:ok, task} =
-        Todos.create_task(%{title: "Active", list_id: list.id, board_id: board.id, position: 0})
+    test "list_cards/1 returns active cards for a board", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{title: "Active", list_id: list.id, board_id: board.id, position: 0})
 
       {:ok, archived} =
-        Todos.create_task(%{title: "Archived", list_id: list.id, board_id: board.id, position: 1})
+        Todos.create_card(%{title: "Archived", list_id: list.id, board_id: board.id, position: 1})
 
-      Todos.archive_task(archived)
+      Todos.archive_card(archived)
 
-      tasks = Todos.list_tasks(board.id)
-      assert length(tasks) == 1
-      assert hd(tasks).id == task.id
+      cards = Todos.list_cards(board.id)
+      assert length(cards) == 1
+      assert hd(cards).id == card.id
     end
 
-    test "create_task/1 with valid attrs", %{board: board, list: list} do
-      attrs = %{title: "New Task", list_id: list.id, board_id: board.id}
-      assert {:ok, %Task{title: "New Task", priority: :medium}} = Todos.create_task(attrs)
+    test "create_card/1 with valid attrs", %{board: board, list: list} do
+      attrs = %{title: "New Card", list_id: list.id, board_id: board.id}
+      assert {:ok, %Card{title: "New Card", priority: :medium}} = Todos.create_card(attrs)
     end
 
-    test "create_task/1 without title fails", %{board: board, list: list} do
-      assert {:error, changeset} = Todos.create_task(%{list_id: list.id, board_id: board.id})
+    test "create_card/1 without title fails", %{board: board, list: list} do
+      assert {:error, changeset} = Todos.create_card(%{list_id: list.id, board_id: board.id})
       assert %{title: ["can't be blank"]} = errors_on(changeset)
     end
 
-    test "update_task/2 changes the task", %{board: board, list: list} do
-      {:ok, task} = Todos.create_task(%{title: "Old", list_id: list.id, board_id: board.id})
-      assert {:ok, %Task{title: "Updated"}} = Todos.update_task(task, %{title: "Updated"})
+    test "update_card/2 changes the card", %{board: board, list: list} do
+      {:ok, card} = Todos.create_card(%{title: "Old", list_id: list.id, board_id: board.id})
+      assert {:ok, %Card{title: "Updated"}} = Todos.update_card(card, %{title: "Updated"})
     end
 
-    test "delete_task/1 removes the task", %{board: board, list: list} do
-      {:ok, task} = Todos.create_task(%{title: "Delete Me", list_id: list.id, board_id: board.id})
-      assert {:ok, %Task{}} = Todos.delete_task(task)
-      assert_raise Ecto.NoResultsError, fn -> Todos.get_task!(task.id) end
+    test "delete_card/1 removes the card", %{board: board, list: list} do
+      {:ok, card} = Todos.create_card(%{title: "Delete Me", list_id: list.id, board_id: board.id})
+      assert {:ok, %Card{}} = Todos.delete_card(card)
+      assert_raise Ecto.NoResultsError, fn -> Todos.get_card!(card.id) end
     end
 
-    test "move_task/3 changes list and position", %{board: board, list: list} do
+    test "move_card/3 changes list and position", %{board: board, list: list} do
       {:ok, list2} = Todos.create_list(%{title: "Other", position: 1, board_id: board.id})
-      {:ok, task} = Todos.create_task(%{title: "Move Me", list_id: list.id, board_id: board.id})
+      {:ok, card} = Todos.create_card(%{title: "Move Me", list_id: list.id, board_id: board.id})
 
-      assert {:ok, moved} = Todos.move_task(task, list2.id, 5)
+      assert {:ok, moved} = Todos.move_card(card, list2.id, 5)
       assert moved.list_id == list2.id
       assert moved.position == 5
     end
 
-    test "archive_task/1 sets archived_at", %{board: board, list: list} do
-      {:ok, task} =
-        Todos.create_task(%{title: "Archive Me", list_id: list.id, board_id: board.id})
+    test "archive_card/1 sets archived_at", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{title: "Archive Me", list_id: list.id, board_id: board.id})
 
-      assert is_nil(task.archived_at)
+      assert is_nil(card.archived_at)
 
-      assert {:ok, archived} = Todos.archive_task(task)
+      assert {:ok, archived} = Todos.archive_card(card)
       assert not is_nil(archived.archived_at)
     end
 
-    test "unarchive_task/1 clears archived_at", %{board: board, list: list} do
-      {:ok, task} =
-        Todos.create_task(%{title: "Unarchive Me", list_id: list.id, board_id: board.id})
+    test "unarchive_card/1 clears archived_at", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{title: "Unarchive Me", list_id: list.id, board_id: board.id})
 
-      {:ok, archived} = Todos.archive_task(task)
+      {:ok, archived} = Todos.archive_card(card)
       assert not is_nil(archived.archived_at)
 
-      assert {:ok, unarchived} = Todos.unarchive_task(archived)
+      assert {:ok, unarchived} = Todos.unarchive_card(archived)
       assert is_nil(unarchived.archived_at)
     end
 
-    test "change_task/2 returns a changeset", %{board: board, list: list} do
-      {:ok, task} = Todos.create_task(%{title: "Test", list_id: list.id, board_id: board.id})
-      assert %Ecto.Changeset{} = Todos.change_task(task)
+    test "change_card/2 returns a changeset", %{board: board, list: list} do
+      {:ok, card} = Todos.create_card(%{title: "Test", list_id: list.id, board_id: board.id})
+      assert %Ecto.Changeset{} = Todos.change_card(card)
     end
   end
 
   describe "get_board_with_data!/1" do
-    test "loads board with lists and active tasks ordered by position" do
+    test "loads board with lists and active cards ordered by position" do
       {:ok, board} = Todos.create_board(%{title: "Full Board"})
       {:ok, list1} = Todos.create_list(%{title: "First", position: 0, board_id: board.id})
       {:ok, list2} = Todos.create_list(%{title: "Second", position: 1, board_id: board.id})
 
-      {:ok, _t2} =
-        Todos.create_task(%{title: "Task 2", position: 1, list_id: list1.id, board_id: board.id})
+      {:ok, _c2} =
+        Todos.create_card(%{title: "Card 2", position: 1, list_id: list1.id, board_id: board.id})
 
-      {:ok, _t1} =
-        Todos.create_task(%{title: "Task 1", position: 0, list_id: list1.id, board_id: board.id})
+      {:ok, _c1} =
+        Todos.create_card(%{title: "Card 1", position: 0, list_id: list1.id, board_id: board.id})
 
       {:ok, archived} =
-        Todos.create_task(%{
+        Todos.create_card(%{
           title: "Archived",
           position: 2,
           list_id: list1.id,
           board_id: board.id
         })
 
-      Todos.archive_task(archived)
+      Todos.archive_card(archived)
 
-      {:ok, _t3} =
-        Todos.create_task(%{title: "Task 3", position: 0, list_id: list2.id, board_id: board.id})
+      {:ok, _c3} =
+        Todos.create_card(%{title: "Card 3", position: 0, list_id: list2.id, board_id: board.id})
 
       loaded = Todos.get_board_with_data!(board.id)
 
@@ -197,12 +197,12 @@ defmodule SmartTodo.TodosTest do
       assert l1.title == "First"
       assert l2.title == "Second"
 
-      assert [t1, t2] = l1.tasks
-      assert t1.title == "Task 1"
-      assert t2.title == "Task 2"
+      assert [c1, c2] = l1.cards
+      assert c1.title == "Card 1"
+      assert c2.title == "Card 2"
 
-      assert [t3] = l2.tasks
-      assert t3.title == "Task 3"
+      assert [c3] = l2.cards
+      assert c3.title == "Card 3"
     end
   end
 end

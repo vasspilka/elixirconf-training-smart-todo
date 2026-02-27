@@ -1,8 +1,8 @@
-defmodule SmartTodo.Todos.Task do
+defmodule SmartTodo.Todos.Card do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "tasks" do
+  schema "cards" do
     field :title, :string
     field :description, :string
     field :position, :integer, default: 0
@@ -17,8 +17,8 @@ defmodule SmartTodo.Todos.Task do
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(task, attrs) do
-    task
+  def changeset(card, attrs) do
+    card
     |> cast(attrs, [
       :title,
       :description,

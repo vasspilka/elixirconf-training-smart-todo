@@ -7,7 +7,7 @@ defmodule SmartTodo.Todos.List do
     field :position, :integer, default: 0
 
     belongs_to :board, SmartTodo.Todos.Board
-    has_many :tasks, SmartTodo.Todos.Task
+    has_many :cards, SmartTodo.Todos.Card
 
     timestamps(type: :utc_datetime)
   end

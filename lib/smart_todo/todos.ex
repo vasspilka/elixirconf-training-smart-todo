@@ -107,6 +107,19 @@ defmodule SmartTodo.Todos do
     |> Repo.update()
   end
 
+  # Reordering
+
+  def reorder_tasks(ordered_ids, list_id) do
+    Repo.transaction(fn ->
+      ordered_ids
+      |> Enum.with_index()
+      |> Enum.each(fn {task_id, index} ->
+        from(t in Task, where: t.id == ^task_id)
+        |> Repo.update_all(set: [position: index, list_id: list_id])
+      end)
+    end)
+  end
+
   # Board loading
 
   def get_board_with_data!(id) do

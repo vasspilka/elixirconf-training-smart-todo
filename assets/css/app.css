@@ -103,3 +103,13 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+.sortable-ghost {
+  opacity: 0.4;
+  background: oklch(70% 0.1 250);
+  border-radius: var(--radius-box);
+}
+
+.sortable-drag {
+  opacity: 0.9;
+}

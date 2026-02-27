@@ -17,7 +17,8 @@ defmodule SmartTodoWeb.Router do
   scope "/", SmartTodoWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", BoardLive.Index
+    live "/boards/:id", BoardLive.Show
   end
 
   # Other scopes may use custom stacks.

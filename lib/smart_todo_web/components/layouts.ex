@@ -12,19 +12,42 @@ defmodule SmartTodoWeb.Layouts do
   embed_templates "layouts/*"
 
   @doc """
-  Renders your app layout.
+  Renders the board layout.
 
-  This function is typically invoked from every template,
-  and it often contains your application menu, sidebar,
-  or similar.
-
-  ## Examples
-
-      <Layouts.app flash={@flash}>
-        <h1>Content</h1>
-      </Layouts.app>
-
+  Full-width layout for the Trello-like board view.
   """
+  attr :flash, :map, required: true
+  attr :current_scope, :map, default: nil
+  slot :inner_block, required: true
+
+  def board(assigns) do
+    ~H"""
+    <div class="flex flex-col h-screen">
+      <header class="navbar px-4 sm:px-6 lg:px-8 flex-shrink-0">
+        <div class="flex-1">
+          <a href="/" class="flex-1 flex w-fit items-center gap-2">
+            <img src={~p"/images/logo.svg"} width="36" />
+            <span class="text-sm font-semibold">Smart Todo</span>
+          </a>
+        </div>
+        <div class="flex-none">
+          <ul class="flex flex-column px-1 space-x-4 items-center">
+            <li>
+              <.theme_toggle />
+            </li>
+          </ul>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-hidden px-4 pb-4">
+        {render_slot(@inner_block)}
+      </main>
+
+      <.flash_group flash={@flash} />
+    </div>
+    """
+  end
+
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
   attr :current_scope, :map,

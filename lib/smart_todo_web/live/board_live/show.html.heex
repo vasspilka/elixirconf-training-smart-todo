@@ -1,0 +1,216 @@
+<Layouts.board flash={@flash}>
+  <div class="flex flex-col h-full">
+    <%!-- Board header --%>
+    <div class="flex items-center gap-4 mb-4 flex-shrink-0">
+      <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
+        <.icon name="hero-arrow-left" class="size-5" />
+      </.link>
+      <h1 class="text-xl font-bold">{@board.title}</h1>
+    </div>
+
+    <%!-- Board columns --%>
+    <div class="flex gap-4 overflow-x-auto flex-1 pb-2">
+      <%!-- List columns --%>
+      <div
+        :for={list <- @board.lists}
+        class="w-72 flex-shrink-0 flex flex-col bg-base-200 rounded-box"
+      >
+        <%!-- List header --%>
+        <div class="p-3 flex items-center justify-between">
+          <div :if={@editing_list == list.id} class="flex-1">
+            <.form
+              for={to_form(Todos.change_list(list))}
+              phx-submit="update_list"
+              phx-value-id={list.id}
+              class="flex gap-2"
+            >
+              <input
+                type="text"
+                name="list[title]"
+                value={list.title}
+                class="input input-sm input-bordered flex-1"
+                phx-mounted={JS.dispatch("focus")}
+              />
+              <button type="submit" class="btn btn-ghost btn-xs">
+                <.icon name="hero-check" class="size-4" />
+              </button>
+              <button type="button" class="btn btn-ghost btn-xs" phx-click="cancel_edit_list">
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+            </.form>
+          </div>
+          <div :if={@editing_list != list.id} class="flex items-center justify-between w-full">
+            <h3 class="font-semibold text-sm">{list.title}</h3>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-ghost btn-xs">
+                <.icon name="hero-ellipsis-horizontal" class="size-4" />
+              </div>
+              <ul
+                tabindex="0"
+                class="dropdown-content menu bg-base-100 rounded-box w-40 p-2 shadow-lg z-50"
+              >
+                <li>
+                  <button phx-click="edit_list" phx-value-id={list.id}>
+                    <.icon name="hero-pencil" class="size-4" /> Rename
+                  </button>
+                </li>
+                <li>
+                  <button
+                    phx-click="delete_list"
+                    phx-value-id={list.id}
+                    data-confirm="Delete this list and all its tasks?"
+                    class="text-error"
+                  >
+                    <.icon name="hero-trash" class="size-4" /> Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Task cards --%>
+        <div
+          id={"list-#{list.id}-tasks"}
+          phx-hook="Sortable"
+          data-list-id={list.id}
+          class="flex-1 overflow-y-auto p-2 space-y-2 min-h-[2rem]"
+        >
+          <div
+            :for={task <- list.tasks}
+            id={"task-#{task.id}"}
+            data-task-id={task.id}
+            class="card bg-base-100 shadow-sm cursor-grab active:cursor-grabbing"
+          >
+            <div class="card-body p-3">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-medium">{task.title}</p>
+                <div class="flex gap-1 flex-shrink-0">
+                  <button
+                    class="btn btn-ghost btn-xs"
+                    phx-click="edit_task"
+                    phx-value-id={task.id}
+                  >
+                    <.icon name="hero-pencil" class="size-3" />
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-xs text-error"
+                    phx-click="delete_task"
+                    phx-value-id={task.id}
+                    data-confirm="Delete this task?"
+                  >
+                    <.icon name="hero-trash" class="size-3" />
+                  </button>
+                </div>
+              </div>
+              <p :if={task.description} class="text-xs text-base-content/60 line-clamp-2">
+                {task.description}
+              </p>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class={"badge badge-xs #{priority_badge_class(task.priority)}"}>
+                  {task.priority}
+                </span>
+                <span :if={task.due_date} class="badge badge-xs badge-outline">
+                  {Calendar.strftime(task.due_date, "%b %d")}
+                </span>
+                <span :for={label <- task.labels} class="badge badge-xs badge-neutral">
+                  {label}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Add task form --%>
+        <div class="p-2">
+          <div :if={@adding_task_to == list.id}>
+            <.form for={@task_form} phx-submit="add_task" class="space-y-2">
+              <input type="hidden" name="task[list_id]" value={list.id} />
+              <input type="hidden" name="task[board_id]" value={@board.id} />
+              <input
+                type="text"
+                name="task[title]"
+                placeholder="Task title"
+                class="input input-sm input-bordered w-full"
+                phx-mounted={JS.dispatch("focus")}
+              />
+              <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary btn-xs">Add</button>
+                <button type="button" class="btn btn-ghost btn-xs" phx-click="cancel_add_task">
+                  Cancel
+                </button>
+              </div>
+            </.form>
+          </div>
+          <button
+            :if={@adding_task_to != list.id}
+            class="btn btn-ghost btn-sm w-full justify-start"
+            phx-click="show_add_task"
+            phx-value-list-id={list.id}
+          >
+            <.icon name="hero-plus" class="size-4" /> Add a task
+          </button>
+        </div>
+      </div>
+
+      <%!-- Add list column --%>
+      <div class="w-72 flex-shrink-0">
+        <div :if={@adding_list} class="bg-base-200 rounded-box p-3">
+          <.form for={@list_form} phx-submit="add_list" class="space-y-2">
+            <input type="hidden" name="list[board_id]" value={@board.id} />
+            <input
+              type="text"
+              name="list[title]"
+              placeholder="List title"
+              class="input input-sm input-bordered w-full"
+              phx-mounted={JS.dispatch("focus")}
+            />
+            <div class="flex gap-2">
+              <button type="submit" class="btn btn-primary btn-xs">Add List</button>
+              <button type="button" class="btn btn-ghost btn-xs" phx-click="cancel_add_list">
+                Cancel
+              </button>
+            </div>
+          </.form>
+        </div>
+        <button
+          :if={!@adding_list}
+          class="btn btn-ghost w-full justify-start bg-base-200/50 hover:bg-base-200"
+          phx-click="show_add_list"
+        >
+          <.icon name="hero-plus" class="size-5" /> Add a list
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%!-- Edit task modal --%>
+  <div
+    :if={@editing_task}
+    class="modal modal-open"
+    phx-window-keydown="cancel_edit_task"
+    phx-key="Escape"
+  >
+    <div class="modal-box">
+      <h3 class="font-bold text-lg mb-4">Edit Task</h3>
+      <.form for={@task_form} phx-submit="update_task" class="space-y-4">
+        <.input field={@task_form[:title]} label="Title" />
+        <.input field={@task_form[:description]} type="textarea" label="Description" />
+        <.input
+          field={@task_form[:priority]}
+          type="select"
+          label="Priority"
+          options={[Low: "low", Medium: "medium", High: "high", Urgent: "urgent"]}
+        />
+        <.input field={@task_form[:due_date]} type="date" label="Due Date" />
+        <div class="modal-action">
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          <button type="button" class="btn btn-ghost btn-sm" phx-click="cancel_edit_task">
+            Cancel
+          </button>
+        </div>
+      </.form>
+    </div>
+    <div class="modal-backdrop" phx-click="cancel_edit_task"></div>
+  </div>
+</Layouts.board>

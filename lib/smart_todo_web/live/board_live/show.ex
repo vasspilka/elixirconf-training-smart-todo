@@ -1,8 +1,10 @@
 defmodule SmartTodoWeb.BoardLive.Show do
   use SmartTodoWeb, :live_view
+  use SmartTodoWeb.BoardLive.CommandHelpers
 
   alias SmartTodo.Todos
   alias SmartTodo.Todos.{List, Card}
+  alias SmartTodoWeb.BoardLive.CommandHelpers
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -18,7 +20,8 @@ defmodule SmartTodoWeb.BoardLive.Show do
      |> assign(:card_form, to_form(Todos.change_card(%Card{})))
      |> assign(:editing_list, nil)
      |> assign(:editing_card, nil)
-     |> assign(:card_detail, nil)}
+     |> assign(:card_detail, nil)
+     |> CommandHelpers.assign_command_helpers()}
   end
 
   # --- List events ---
@@ -169,6 +172,17 @@ defmodule SmartTodoWeb.BoardLive.Show do
     Todos.reorder_cards(ordered_ids, to_list_id)
 
     {:noreply, reload_board(socket)}
+  end
+
+  # --- Handle info (from child components) ---
+
+  @impl true
+  def handle_info({:chat_message, text}, socket) do
+    {:noreply, CommandHelpers.handle_chat_message(socket, text)}
+  end
+
+  def handle_info({:execute_command, _text}, socket) do
+    {:noreply, CommandHelpers.handle_execute_command(socket)}
   end
 
   defp reload_board(socket) do

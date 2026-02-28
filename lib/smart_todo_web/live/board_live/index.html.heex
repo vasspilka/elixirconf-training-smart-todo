@@ -1,67 +1,94 @@
 <Layouts.app flash={@flash}>
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold">My Boards</h1>
-      <button class="btn btn-primary" phx-click="new_board">
-        <.icon name="hero-plus" class="size-5" /> New Board
-      </button>
-    </div>
-
-    <div :if={@show_form} class="card bg-base-200 p-6">
-      <.form for={@form} phx-submit="save_board" phx-change="validate_board" class="space-y-4">
-        <.input field={@form[:title]} label="Title" placeholder="Board title" />
-        <.input
-          field={@form[:description]}
-          type="textarea"
-          label="Description"
-          placeholder="Optional description"
-        />
-        <div class="flex gap-2">
-          <button type="submit" class="btn btn-primary btn-sm">
-            {if @editing_board, do: "Update", else: "Create"}
+  <div id="index-wrapper" phx-hook="CommandInput">
+    <div class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">My Boards</h1>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-ghost btn-sm" phx-click="toggle_chat_panel">
+            <.icon name="hero-chat-bubble-left-right" class="size-5" />
           </button>
-          <button type="button" class="btn btn-ghost btn-sm" phx-click="cancel_form">
-            Cancel
+          <button class="btn btn-ghost btn-sm gap-1" phx-click="toggle_command_input">
+            <.icon name="hero-command-line" class="size-5" />
+            <kbd class="kbd kbd-xs">⌘K</kbd>
+          </button>
+          <button class="btn btn-primary" phx-click="new_board">
+            <.icon name="hero-plus" class="size-5" /> New Board
           </button>
         </div>
-      </.form>
-    </div>
+      </div>
 
-    <div :if={@boards == []} class="text-center py-12 text-base-content/60">
-      <.icon name="hero-clipboard-document-list" class="size-12 mx-auto mb-4" />
-      <p class="text-lg">No boards yet. Create your first board to get started!</p>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <.link
-        :for={board <- @boards}
-        navigate={~p"/boards/#{board.id}"}
-        class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
-      >
-        <div class="card-body">
-          <h2 class="card-title">{board.title}</h2>
-          <p :if={board.description} class="text-base-content/70 text-sm">
-            {board.description}
-          </p>
-          <div class="card-actions justify-end mt-2">
-            <button
-              class="btn btn-ghost btn-xs"
-              phx-click="edit_board"
-              phx-value-id={board.id}
-            >
-              <.icon name="hero-pencil" class="size-4" />
+      <div :if={@show_form} class="card bg-base-200 p-6">
+        <.form for={@form} phx-submit="save_board" phx-change="validate_board" class="space-y-4">
+          <.input field={@form[:title]} label="Title" placeholder="Board title" />
+          <.input
+            field={@form[:description]}
+            type="textarea"
+            label="Description"
+            placeholder="Optional description"
+          />
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">
+              {if @editing_board, do: "Update", else: "Create"}
             </button>
-            <button
-              class="btn btn-ghost btn-xs text-error"
-              phx-click="delete_board"
-              phx-value-id={board.id}
-              data-confirm="Delete this board and all its lists and tasks?"
-            >
-              <.icon name="hero-trash" class="size-4" />
+            <button type="button" class="btn btn-ghost btn-sm" phx-click="cancel_form">
+              Cancel
             </button>
           </div>
-        </div>
-      </.link>
+        </.form>
+      </div>
+
+      <div :if={@boards == []} class="text-center py-12 text-base-content/60">
+        <.icon name="hero-clipboard-document-list" class="size-12 mx-auto mb-4" />
+        <p class="text-lg">No boards yet. Create your first board to get started!</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <.link
+          :for={board <- @boards}
+          navigate={~p"/boards/#{board.id}"}
+          class="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+        >
+          <div class="card-body">
+            <h2 class="card-title">{board.title}</h2>
+            <p :if={board.description} class="text-base-content/70 text-sm">
+              {board.description}
+            </p>
+            <div class="card-actions justify-end mt-2">
+              <button
+                class="btn btn-ghost btn-xs"
+                phx-click="edit_board"
+                phx-value-id={board.id}
+              >
+                <.icon name="hero-pencil" class="size-4" />
+              </button>
+              <button
+                class="btn btn-ghost btn-xs text-error"
+                phx-click="delete_board"
+                phx-value-id={board.id}
+                data-confirm="Delete this board and all its lists and tasks?"
+              >
+                <.icon name="hero-trash" class="size-4" />
+              </button>
+            </div>
+          </div>
+        </.link>
+      </div>
     </div>
+
+    <%!-- Chat sidepanel (slides in from right on Index) --%>
+    <.live_component
+      module={SmartTodoWeb.BoardLive.ChatPanel}
+      id="chat-panel"
+      open={@chat_panel_open}
+      messages={@chat_messages}
+    />
+
+    <%!-- Command input overlay --%>
+    <.live_component
+      :if={@command_input_open}
+      module={SmartTodoWeb.BoardLive.CommandInput}
+      id="command-input"
+      commands={@available_commands}
+    />
   </div>
 </Layouts.app>

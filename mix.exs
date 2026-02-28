@@ -11,7 +11,8 @@ defmodule SmartTodo.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      usage_rules: usage_rules()
     ]
   end
 
@@ -31,6 +32,23 @@ defmodule SmartTodo.MixProject do
     ]
   end
 
+  defp usage_rules do
+    [
+      file: "CLAUDE.md",
+      usage_rules: ["usage_rules:all"],
+      skills: [
+        location: ".claude/skills",
+        build: [
+          "phoenix-framework": [
+            description:
+              "Use this skill working with Phoenix Framework. Consult this when working with the web layer, controllers, views, liveviews etc.",
+            usage_rules: [:phoenix, ~r/^phoenix_/]
+          ]
+        ]
+      ]
+    ]
+  end
+
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
@@ -40,6 +58,9 @@ defmodule SmartTodo.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:live_debugger, "~> 0.6", only: [:dev]},
+      {:usage_rules, "~> 1.0", only: [:dev]},
+      {:tidewave, "~> 0.5", only: [:dev]},
       {:phoenix, "~> 1.8.4"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},
@@ -65,7 +86,8 @@ defmodule SmartTodo.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:igniter, "~> 0.6", only: [:dev, :test]}
     ]
   end
 

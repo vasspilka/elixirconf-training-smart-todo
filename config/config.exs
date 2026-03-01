@@ -60,10 +60,6 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :live_debugger,
-  port: 4207, # Port on which LiveDebugger will be hosted
-  adapter: Bandit.PhoenixAdapter # Adapter used in LiveDebugger.Endpoint
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

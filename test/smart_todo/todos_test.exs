@@ -43,6 +43,22 @@ defmodule SmartTodo.TodosTest do
       {:ok, board} = Todos.create_board(%{title: "Test"})
       assert %Ecto.Changeset{} = Todos.change_board(board)
     end
+
+    test "get_board_by_title/1 finds board by exact title" do
+      {:ok, board} = Todos.create_board(%{title: "Marketing"})
+      result = Todos.get_board_by_title("Marketing")
+      assert result.id == board.id
+    end
+
+    test "get_board_by_title/1 finds board case-insensitively" do
+      {:ok, board} = Todos.create_board(%{title: "Marketing Plan"})
+      result = Todos.get_board_by_title("marketing plan")
+      assert result.id == board.id
+    end
+
+    test "get_board_by_title/1 returns nil when not found" do
+      assert Todos.get_board_by_title("Nonexistent") == nil
+    end
   end
 
   describe "lists" do
@@ -162,6 +178,147 @@ defmodule SmartTodo.TodosTest do
     test "change_card/2 returns a changeset", %{board: board, list: list} do
       {:ok, card} = Todos.create_card(%{title: "Test", list_id: list.id, board_id: board.id})
       assert %Ecto.Changeset{} = Todos.change_card(card)
+    end
+  end
+
+  describe "get_card_by_title/2" do
+    setup do
+      {:ok, board} = Todos.create_board(%{title: "Board"})
+      {:ok, list} = Todos.create_list(%{title: "List", position: 0, board_id: board.id})
+      %{board: board, list: list}
+    end
+
+    test "finds card by title", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{
+          title: "Login page",
+          list_id: list.id,
+          board_id: board.id,
+          position: 0
+        })
+
+      result = Todos.get_card_by_title(board.id, "Login page")
+      assert result.id == card.id
+    end
+
+    test "finds card case-insensitively", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{
+          title: "Login page",
+          list_id: list.id,
+          board_id: board.id,
+          position: 0
+        })
+
+      result = Todos.get_card_by_title(board.id, "login")
+      assert result.id == card.id
+    end
+
+    test "excludes archived cards", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{
+          title: "Old login",
+          list_id: list.id,
+          board_id: board.id,
+          position: 0
+        })
+
+      Todos.archive_card(card)
+
+      assert Todos.get_card_by_title(board.id, "login") == nil
+    end
+
+    test "returns nil when not found", %{board: board} do
+      assert Todos.get_card_by_title(board.id, "nonexistent") == nil
+    end
+  end
+
+  describe "search_cards/2" do
+    setup do
+      {:ok, board} = Todos.create_board(%{title: "Board"})
+      {:ok, list} = Todos.create_list(%{title: "List", position: 0, board_id: board.id})
+      %{board: board, list: list}
+    end
+
+    test "finds cards by title", %{board: board, list: list} do
+      {:ok, _} =
+        Todos.create_card(%{
+          title: "Login page bug",
+          list_id: list.id,
+          board_id: board.id,
+          position: 0
+        })
+
+      {:ok, _} =
+        Todos.create_card(%{
+          title: "Signup form",
+          list_id: list.id,
+          board_id: board.id,
+          position: 1
+        })
+
+      results = Todos.search_cards(board.id, "login")
+      assert length(results) == 1
+      assert hd(results).title == "Login page bug"
+    end
+
+    test "finds cards by description", %{board: board, list: list} do
+      {:ok, _} =
+        Todos.create_card(%{
+          title: "Bug fix",
+          description: "Fix the authentication flow",
+          list_id: list.id,
+          board_id: board.id,
+          position: 0
+        })
+
+      results = Todos.search_cards(board.id, "authentication")
+      assert length(results) == 1
+      assert hd(results).title == "Bug fix"
+    end
+
+    test "excludes archived cards", %{board: board, list: list} do
+      {:ok, card} =
+        Todos.create_card(%{
+          title: "Archived login task",
+          list_id: list.id,
+          board_id: board.id,
+          position: 0
+        })
+
+      Todos.archive_card(card)
+
+      results = Todos.search_cards(board.id, "login")
+      assert results == []
+    end
+
+    test "returns empty list when no match", %{board: board} do
+      assert Todos.search_cards(board.id, "nonexistent") == []
+    end
+  end
+
+  describe "get_list_by_title/2" do
+    setup do
+      {:ok, board} = Todos.create_board(%{title: "Board"})
+      %{board: board}
+    end
+
+    test "finds list by exact title", %{board: board} do
+      {:ok, list} = Todos.create_list(%{title: "Done", position: 0, board_id: board.id})
+
+      result = Todos.get_list_by_title(board.id, "Done")
+      assert result.id == list.id
+    end
+
+    test "finds list case-insensitively", %{board: board} do
+      {:ok, list} = Todos.create_list(%{title: "In Progress", position: 0, board_id: board.id})
+
+      result = Todos.get_list_by_title(board.id, "in progress")
+      assert result.id == list.id
+    end
+
+    test "returns nil when not found", %{board: board} do
+      assert Todos.get_list_by_title(board.id, "Nonexistent") == nil
     end
   end
 

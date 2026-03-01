@@ -199,6 +199,7 @@
       id="chat-panel"
       open={@chat_panel_open}
       messages={@chat_messages}
+      loading={@loading}
     />
 
     <%!-- Command input overlay --%>
@@ -209,6 +210,15 @@
       commands={@available_commands}
     />
   </div>
+
+  <%!-- Card preview modal --%>
+  <.live_component
+    :if={@preview_cards != []}
+    module={SmartTodoWeb.BoardLive.CardPreview}
+    id="card-preview"
+    cards={@preview_cards}
+    board={@board}
+  />
 
   <%!-- Edit card modal --%>
   <div
@@ -229,6 +239,18 @@
           options={[Low: "low", Medium: "medium", High: "high", Urgent: "urgent"]}
         />
         <.input field={@card_form[:due_date]} type="date" label="Due Date" />
+        <div>
+          <label class="label" for="card_labels_string">Labels</label>
+          <input
+            type="text"
+            id="card_labels_string"
+            name="card[labels_string]"
+            value={Enum.join((@editing_card && @editing_card.labels) || [], ", ")}
+            placeholder="bug, feature, urgent"
+            class="input input-bordered w-full"
+          />
+          <p class="label-text-alt text-base-content/50 mt-1">Separate labels with commas</p>
+        </div>
         <div class="modal-action">
           <button type="submit" class="btn btn-primary btn-sm">Save</button>
           <button type="button" class="btn btn-ghost btn-sm" phx-click="cancel_edit_card">

@@ -136,6 +136,8 @@ defmodule SmartTodoWeb.BoardLive.Show do
   def handle_event("update_card", %{"card" => params}, socket) do
     card = socket.assigns.editing_card
 
+    params = parse_labels_param(params)
+
     case Todos.update_card(card, params) do
       {:ok, _card} ->
         {:noreply,
@@ -181,14 +183,31 @@ defmodule SmartTodoWeb.BoardLive.Show do
     {:noreply, CommandHelpers.handle_chat_message(socket, text)}
   end
 
-  def handle_info({:execute_command, _text}, socket) do
-    {:noreply, CommandHelpers.handle_execute_command(socket)}
+  def handle_info({:execute_command, text}, socket) do
+    {:noreply, CommandHelpers.handle_execute_command(socket, text)}
   end
 
-  defp reload_board(socket) do
-    board = Todos.get_board_with_data!(socket.assigns.board.id)
-    assign(socket, :board, board)
+  def handle_info({:add_preview_cards, selected_cards}, socket) do
+    {:noreply, CommandHelpers.handle_add_preview_cards(socket, selected_cards)}
   end
+
+  def handle_info(:dismiss_preview, socket) do
+    {:noreply, assign(socket, :preview_cards, [])}
+  end
+
+  defp parse_labels_param(%{"labels_string" => labels_string} = params) do
+    labels =
+      labels_string
+      |> String.split(",")
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+
+    params
+    |> Map.delete("labels_string")
+    |> Map.put("labels", labels)
+  end
+
+  defp parse_labels_param(params), do: params
 
   defp priority_badge_class(priority) do
     case priority do

@@ -3,10 +3,7 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
 
   @impl true
   def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign_new(:input_value, fn -> "" end)}
+    {:ok, assign(socket, assigns)}
   end
 
   @impl true
@@ -32,7 +29,7 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
         </div>
 
         <%!-- Messages --%>
-        <div class="flex-1 overflow-y-auto p-3 space-y-3" id="chat-messages">
+        <div class="flex-1 overflow-y-auto p-3 space-y-3" id="chat-messages" phx-hook="ChatScroll">
           <div
             :if={@messages == []}
             class="flex flex-col items-center justify-center h-full text-base-content/40"
@@ -53,15 +50,26 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
               {msg.content}
             </div>
           </div>
+
+          <div :if={@loading} class="chat chat-start">
+            <div class="chat-bubble chat-bubble-neutral">
+              <span class="loading loading-dots loading-sm"></span>
+            </div>
+          </div>
         </div>
 
         <%!-- Input --%>
         <div class="p-3 border-t border-base-300">
-          <form phx-submit="send_chat_message" phx-target={@myself} class="flex gap-2">
+          <form
+            phx-submit="send_chat_message"
+            phx-target={@myself}
+            phx-hook="ChatInput"
+            id="chat-input-form"
+            class="flex gap-2"
+          >
             <input
               type="text"
               name="message"
-              value={@input_value}
               placeholder="Ask AI..."
               class="input input-sm input-bordered flex-1"
               autocomplete="off"
@@ -84,6 +92,6 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
       send(self(), {:chat_message, text})
     end
 
-    {:noreply, assign(socket, :input_value, "")}
+    {:noreply, socket}
   end
 end

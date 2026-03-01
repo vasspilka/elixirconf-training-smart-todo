@@ -12,6 +12,15 @@ defmodule SmartTodo.Todos do
 
   def get_board!(id), do: Repo.get!(Board, id)
 
+  def get_board_by_title(title) do
+    search = ilike_search(title)
+
+    Board
+    |> where([b], ilike(b.title, ^search))
+    |> limit(1)
+    |> Repo.one()
+  end
+
   def create_board(attrs \\ %{}) do
     %Board{}
     |> Board.changeset(attrs)
@@ -40,6 +49,16 @@ defmodule SmartTodo.Todos do
   end
 
   def get_list!(id), do: Repo.get!(List, id)
+
+  def get_list_by_title(board_id, title) do
+    search = ilike_search(title)
+
+    List
+    |> where(board_id: ^board_id)
+    |> where([l], ilike(l.title, ^search))
+    |> limit(1)
+    |> Repo.one()
+  end
 
   def create_list(attrs \\ %{}) do
     %List{}
@@ -70,6 +89,28 @@ defmodule SmartTodo.Todos do
   end
 
   def get_card!(id), do: Repo.get!(Card, id)
+
+  def get_card_by_title(board_id, title) do
+    search = ilike_search(title)
+
+    Card
+    |> where(board_id: ^board_id)
+    |> where([c], is_nil(c.archived_at))
+    |> where([c], ilike(c.title, ^search))
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def search_cards(board_id, query) do
+    search = ilike_search(query)
+
+    Card
+    |> where(board_id: ^board_id)
+    |> where([c], is_nil(c.archived_at))
+    |> where([c], ilike(c.title, ^search) or ilike(c.description, ^search))
+    |> order_by(:position)
+    |> Repo.all()
+  end
 
   def create_card(attrs \\ %{}) do
     %Card{}
@@ -121,6 +162,11 @@ defmodule SmartTodo.Todos do
   end
 
   # Board loading
+
+  defp ilike_search(term) do
+    escaped = String.replace(term, ~r/[%_\\]/, "\\\\\\0")
+    "%#{escaped}%"
+  end
 
   def get_board_with_data!(id) do
     cards_query = from c in Card, where: is_nil(c.archived_at), order_by: c.position

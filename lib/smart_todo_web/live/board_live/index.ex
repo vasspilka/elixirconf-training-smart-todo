@@ -71,8 +71,22 @@ defmodule SmartTodoWeb.BoardLive.Index do
     {:noreply, CommandHelpers.handle_chat_message(socket, text)}
   end
 
-  def handle_info({:execute_command, _text}, socket) do
-    {:noreply, CommandHelpers.handle_execute_command(socket)}
+  def handle_info({:execute_command, text}, socket) do
+    {:noreply, CommandHelpers.handle_execute_command(socket, text)}
+  end
+
+  ## TODO: Implement this
+  # The Index page has no single board context, so preview cards can't be added yet.
+  # Consider: prompt the user to select a target board, or disable previews on this page.
+  def handle_info({:add_preview_cards, _selected_cards}, socket) do
+    {:noreply,
+     socket
+     |> assign(:preview_cards, [])
+     |> put_flash(:error, "Navigate to a board first to add cards")}
+  end
+
+  def handle_info(:dismiss_preview, socket) do
+    {:noreply, assign(socket, :preview_cards, [])}
   end
 
   defp create_board(socket, params) do

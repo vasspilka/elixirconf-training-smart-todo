@@ -25,13 +25,15 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/smart_todo"
 import Sortable from "./hooks/sortable"
 import CommandInput from "./hooks/command_input"
+import ChatInput from "./hooks/chat_input"
+import ChatScroll from "./hooks/chat_scroll"
 import topbar from "../vendor/topbar"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, Sortable, CommandInput},
+  hooks: {...colocatedHooks, Sortable, CommandInput, ChatInput, ChatScroll},
 })
 
 // Show progress bar on live navigation and form submits

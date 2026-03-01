@@ -35,6 +35,9 @@ smart_todo-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Environment variables
+.env
+
 # Coding agents related
 .claude
 CLAUDE.md

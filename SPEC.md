@@ -40,24 +40,24 @@ Wire it up with our preview and add where users can toggle individual cards on/o
 ### 2.1 Basic tools
 Give the LLM tools to mutate the board directly:
 
-- `create_board`, `switch_board`
 - `create_list`
-- `create_card`, `move_card`, `update_card`, `set_priority`, `add_label`, `archive_card`
+- `create_card`, `move_card`, `update_card`
+
+`update_card` covers setting priority, due date, and labels in a single tool.
 
 User says *"Move the login task to Done"*, the LLM picks the right tool, the board updates live.
 
 ### 2.2 Intent detection
 Before executing, a lightweight LLM call figures out what the user *wants* to do and shows it in the Command Palette — It will reply in structured JSON counting how many commands are expected to run for example:
 
-%{
-  create_board: 0,
-  create_card: 2,
-  move_card: 3,
-  ..
-}
+```
+[
+  %{tool: "create_list, count: 1"}
+  %{tool: "create_card", count: 3}
+]
+```
 
-These results will then be used to highlight the commands we expect to be run. 
-Note that we should use a debounce of at least 1 second to avoid excessive LLM calls
+These results will then be used to highlight the commands we expect to be run. Note that we should use a debounce second to avoid excessive LLM calls
 
 ---
 

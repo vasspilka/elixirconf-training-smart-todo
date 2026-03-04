@@ -111,16 +111,18 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
 
   defp default_commands do
     [
+      %{name: "Create list", description: "Add a new list to the board", icon: "hero-queue-list"},
       %{name: "Create card", description: "Add a new card to a list", icon: "hero-plus-circle"},
       %{
         name: "Move card",
         description: "Move a card to another list",
         icon: "hero-arrow-right-circle"
       },
-      %{name: "Set priority", description: "Change a card's priority", icon: "hero-flag"},
-      %{name: "Add label", description: "Add a label to a card", icon: "hero-tag"},
-      %{name: "Archive card", description: "Archive a card", icon: "hero-archive-box"},
-      %{name: "Ask AI", description: "Ask AI for help with your board", icon: "hero-sparkles"}
+      %{
+        name: "Update card",
+        description: "Update a card's priority, due date, or labels",
+        icon: "hero-pencil-square"
+      }
     ]
   end
 end

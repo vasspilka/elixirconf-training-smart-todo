@@ -1,12 +1,16 @@
 defmodule SmartTodoWeb.BoardLive.CommandInput do
   use SmartTodoWeb, :live_component
 
+  @debounce_ms 1000
+
   @impl true
   def update(assigns, socket) do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:input_value, fn -> "" end)}
+     |> assign_new(:input_value, fn -> "" end)
+     |> assign_new(:detected_intents, fn -> %{} end)
+     |> assign_new(:detecting, fn -> false end)}
   end
 
   @impl true
@@ -84,6 +88,26 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
           </ul>
         </div>
 
+        <%!-- Intent detection display --%>
+        <div
+          :if={@detected_intents != %{} || @detecting}
+          class="border-t border-base-300 px-3 py-2"
+        >
+          <div :if={@detecting} class="flex items-center gap-2 text-xs text-base-content/50">
+            <span class="loading loading-dots loading-xs"></span>
+            <span>Analyzing intent...</span>
+          </div>
+          <div :if={@detected_intents != %{} && !@detecting} class="flex flex-wrap gap-1.5">
+            <span
+              :for={{tool, count} <- @detected_intents}
+              class="badge badge-sm badge-outline gap-1"
+            >
+              {format_tool_name(tool)}
+              <span class="badge badge-xs badge-primary">{count}</span>
+            </span>
+          </div>
+        </div>
+
         <%!-- Footer hints --%>
         <div class="border-t border-base-300 px-3 py-2 flex items-center gap-4 text-xs text-base-content/50">
           <span><kbd class="kbd kbd-xs">Enter</kbd> to submit</span>
@@ -97,16 +121,34 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
 
   @impl true
   def handle_event("submit_command", %{"text" => text}, socket) do
-    send(self(), {:execute_command, String.trim(text)})
+    send(self(), {:execute_command, String.trim(text), socket.assigns.detected_intents})
     {:noreply, socket}
   end
 
   def handle_event("update_input", %{"command_text" => value}, socket) do
-    {:noreply, assign(socket, :input_value, value)}
+    # Cancel any pending debounce timer
+    if socket.assigns[:debounce_ref], do: Process.cancel_timer(socket.assigns.debounce_ref)
+
+    ref =
+      if String.trim(value) != "" do
+        Process.send_after(self(), {:detect_intent, value, socket.assigns.myself}, @debounce_ms)
+      end
+
+    {:noreply,
+     socket
+     |> assign(:input_value, value)
+     |> assign(:debounce_ref, ref)}
   end
 
   def handle_event("select_command", %{"name" => name}, socket) do
     {:noreply, assign(socket, :input_value, name <> " ")}
+  end
+
+  defp format_tool_name(name) do
+    name
+    |> to_string()
+    |> String.replace("_", " ")
+    |> String.capitalize()
   end
 
   defp filtered_commands(commands, input) do

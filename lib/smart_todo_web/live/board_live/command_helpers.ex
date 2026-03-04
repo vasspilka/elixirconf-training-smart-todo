@@ -33,7 +33,7 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
     end
   end
 
-  import Phoenix.Component, only: [assign: 3]
+  import Phoenix.Component, only: [assign: 2, assign: 3]
 
   def assign_command_helpers(socket) do
     socket
@@ -61,9 +61,10 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
 
   ## TODO: Implement this
   # Parse the command text with the LLM and execute the appropriate action.
-  # Phase 1: parse into card structs and assign to :preview_cards.
-  # Phase 2: use LLM tools to mutate the board directly.
-  def handle_execute_command(socket, _text) do
+  # Phase 1: Use SmartTodo.LLM.parse_cards/2 to parse into card structs and assign to :preview_cards.
+  # Phase 2: Use SmartTodo.LLM.execute_command/2 for tool-based commands.
+  # Consider using intents to decide which path to take.
+  def handle_execute_command(socket, _text, _intents \\ %{}) do
     assign(socket, :command_input_open, false)
   end
 

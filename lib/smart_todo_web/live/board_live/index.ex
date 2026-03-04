@@ -71,8 +71,8 @@ defmodule SmartTodoWeb.BoardLive.Index do
     {:noreply, CommandHelpers.handle_chat_message(socket, text)}
   end
 
-  def handle_info({:execute_command, text}, socket) do
-    {:noreply, CommandHelpers.handle_execute_command(socket, text)}
+  def handle_info({:execute_command, text, intents}, socket) do
+    {:noreply, CommandHelpers.handle_execute_command(socket, text, intents)}
   end
 
   ## TODO: Implement this

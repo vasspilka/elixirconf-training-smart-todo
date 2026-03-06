@@ -70,13 +70,20 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
 
         <%!-- Suggestions --%>
         <div :if={@commands != []} class="border-t border-base-300 max-h-64 overflow-y-auto">
+          <div
+            :if={@detecting}
+            class="flex items-center gap-2 text-xs text-base-content/50 px-3 py-1.5"
+          >
+            <span class="loading loading-dots loading-xs"></span>
+            <span>Analyzing intent...</span>
+          </div>
           <ul class="menu menu-sm p-2">
-            <li :for={cmd <- filtered_commands(@commands, @input_value)}>
+            <li :for={cmd <- display_commands(@commands, @input_value, @detected_intents)}>
               <button
                 phx-click="select_command"
                 phx-value-name={cmd.name}
                 phx-target={@myself}
-                class="flex items-center gap-3"
+                class={["flex items-center gap-3", cmd[:matched] && "active"]}
               >
                 <.icon name={cmd.icon} class="size-4 text-base-content/60" />
                 <div>
@@ -86,25 +93,6 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
               </button>
             </li>
           </ul>
-        </div>
-
-        <%!-- Intent detection display --%>
-        <div
-          :if={@detected_intents != %{} || @detecting}
-          class="border-t border-base-300 px-3 py-2"
-        >
-          <div :if={@detecting} class="flex items-center gap-2 text-xs text-base-content/50">
-            <span class="loading loading-dots loading-xs"></span>
-            <span>Analyzing intent...</span>
-          </div>
-          <div :if={@detected_intents != %{} && !@detecting} class="flex flex-wrap gap-1.5">
-            <span
-              :for={{tool, _count} <- @detected_intents}
-              class="badge badge-sm badge-outline"
-            >
-              {format_tool_name(tool)}
-            </span>
-          </div>
         </div>
 
         <%!-- Footer hints --%>
@@ -143,11 +131,16 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
     {:noreply, assign(socket, :input_value, name <> " ")}
   end
 
-  defp format_tool_name(name) do
-    name
-    |> to_string()
-    |> String.replace("_", " ")
-    |> String.capitalize()
+  defp display_commands(commands, _input, detected_intents) when detected_intents != %{} do
+    intent_tools = Enum.map(Map.keys(detected_intents), &to_string/1)
+
+    commands
+    |> Enum.filter(fn cmd -> to_string(cmd.tool) in intent_tools end)
+    |> Enum.map(fn cmd -> Map.put(cmd, :matched, true) end)
+  end
+
+  defp display_commands(commands, input, _detected_intents) do
+    filtered_commands(commands, input)
   end
 
   defp filtered_commands(commands, input) do

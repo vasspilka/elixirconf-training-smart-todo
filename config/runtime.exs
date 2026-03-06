@@ -23,10 +23,11 @@ end
 config :smart_todo, SmartTodoWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4200"))]
 
-# LLM Configuration
+# AI Configuration — get a free key from https://aistudio.google.com/apikey
 # Copy .env.example to .env and set your API key
-config :langchain, openai_key: System.get_env("LLM_API_KEY")
-config :smart_todo, :llm_model, System.get_env("LLM_MODEL", "gpt-5-mini")
+config :langchain, google_ai_key: System.get_env("GOOGLE_AI_API_KEY")
+config :smart_todo, :llm_model, System.get_env("LLM_MODEL", "gemini-3.1-flash-lite")
+config :smart_todo, :embeddings_model, System.get_env("EMBEDDINGS_MODEL", "text-embedding-004")
 
 if config_env() == :prod do
   database_url =

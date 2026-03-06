@@ -23,9 +23,18 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
           <h3 class="font-semibold text-sm flex items-center gap-2">
             <.icon name="hero-sparkles" class="size-4" /> AI Assistant
           </h3>
-          <button class="btn btn-ghost btn-xs" phx-click="toggle_chat_panel">
-            <.icon name="hero-x-mark" class="size-4" />
-          </button>
+          <div class="flex items-center gap-1">
+            <button
+              class="btn btn-ghost btn-xs"
+              phx-click="clear_chat"
+              title="Clear conversation"
+            >
+              <.icon name="hero-arrow-path" class="size-4" />
+            </button>
+            <button class="btn btn-ghost btn-xs" phx-click="toggle_chat_panel">
+              <.icon name="hero-x-mark" class="size-4" />
+            </button>
+          </div>
         </div>
 
         <%!-- Messages --%>

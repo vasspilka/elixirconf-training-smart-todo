@@ -195,21 +195,22 @@ defmodule SmartTodoWeb.BoardLive.Show do
     {:noreply, assign(socket, :preview_cards, [])}
   end
 
-  ## TODO: Implement these handle_info clauses as you build each phase.
-
   # Phase 1 — Handle parsed card results from SmartTodo.LLM.parse_cards/2
   # {:parsed_cards, {:ok, cards}} → assign preview_cards, set loading false
   # {:parsed_cards, {:error, reason}} → flash error, set loading false
+  def handle_info({:parsed_cards, _result}, socket), do: {:noreply, socket}
 
   # Phase 2 — Handle tool-based command results from SmartTodo.LLM.execute_command/2
   # {:command_result, {:ok, response}} → reload board, flash the response, set loading false
   # {:command_result, {:error, reason}} → flash error, set loading false
+  def handle_info({:command_result, _result}, socket), do: {:noreply, socket}
 
   # Phase 2 — Handle intent detection from CommandInput debounce
   # {:detect_intent, text, component_id} → call SmartTodo.LLM.detect_intent/2 in a Task,
   #   send {:intent_result, result, component_id} back to self()
   # {:intent_result, {:ok, intents}, _} → send_update CommandInput with detected_intents
-  # {:intent_result, _, _} → send_update CommandInput with detecting: false
+  def handle_info({:detect_intent, _text, _component_id}, socket), do: {:noreply, socket}
+  def handle_info({:intent_result, _result, _component_id}, socket), do: {:noreply, socket}
 
   defp parse_labels_param(%{"labels_string" => labels_string} = params) do
     labels =

@@ -30,6 +30,10 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
       def handle_event("close_command_input", _params, socket) do
         {:noreply, Phoenix.Component.assign(socket, :command_input_open, false)}
       end
+
+      def handle_event("clear_chat", _params, socket) do
+        {:noreply, Phoenix.Component.assign(socket, :chat_messages, [])}
+      end
     end
   end
 
@@ -122,6 +126,11 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
         name: "Update card",
         description: "Update a card's priority, due date, or labels",
         icon: "hero-pencil-square"
+      },
+      %{
+        name: "Archive card",
+        description: "Archive a card from the board",
+        icon: "hero-archive-box"
       }
     ]
   end

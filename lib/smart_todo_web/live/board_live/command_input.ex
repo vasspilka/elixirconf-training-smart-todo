@@ -99,11 +99,10 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
           </div>
           <div :if={@detected_intents != %{} && !@detecting} class="flex flex-wrap gap-1.5">
             <span
-              :for={{tool, count} <- @detected_intents}
-              class="badge badge-sm badge-outline gap-1"
+              :for={{tool, _count} <- @detected_intents}
+              class="badge badge-sm badge-outline"
             >
               {format_tool_name(tool)}
-              <span class="badge badge-xs badge-primary">{count}</span>
             </span>
           </div>
         </div>

@@ -114,7 +114,7 @@ defmodule SmartTodo.LLM do
   Returns `{:ok, intents}` where intents is a list of tool name strings,
   or `{:error, reason}`.
   """
-  def detect_intent(text, board_context \\ %{}) do
+  def detect_intent(text, _board_context \\ %{}) do
     system_prompt = """
     You are an intent detector for a Kanban board command input.
     The user has typed a command and you must predict which board tools they want to use.
@@ -159,6 +159,29 @@ defmodule SmartTodo.LLM do
   Returns `{:ok, response_text}` or `{:error, reason}`.
   """
   def execute_command(text, board_id, board_context \\ %{}) do
+    case execute_command_chain(text, board_id, board_context) do
+      {:ok, chain} ->
+        response =
+          case chain.last_message.content do
+            content when is_binary(content) -> content
+            [%{content: content} | _] -> content
+            content when is_list(content) -> Enum.map_join(content, "\n", & &1)
+            _ -> "Command executed successfully."
+          end
+
+        {:ok, response}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Like `execute_command/3` but returns the full chain for trajectory evaluation.
+
+  Returns `{:ok, chain}` or `{:error, reason}`.
+  """
+  def execute_command_chain(text, board_id, board_context \\ %{}) do
     today = Date.utc_today() |> Date.to_iso8601()
 
     system_prompt = """
@@ -187,15 +210,7 @@ defmodule SmartTodo.LLM do
          |> LLMChain.add_message(Message.new_user!(text))
          |> LLMChain.run(mode: :while_needs_response) do
       {:ok, chain} ->
-        response =
-          case chain.last_message.content do
-            content when is_binary(content) -> content
-            [%{content: content} | _] -> content
-            content when is_list(content) -> Enum.map_join(content, "\n", & &1)
-            _ -> "Command executed successfully."
-          end
-
-        {:ok, response}
+        {:ok, chain}
 
       {:error, _chain, %LangChain.LangChainError{message: message}} ->
         {:error, message}

@@ -195,10 +195,20 @@ defmodule SmartTodoWeb.BoardLive.Show do
     {:noreply, assign(socket, :preview_cards, [])}
   end
 
-  # Phase 1 — Handle parsed card results from SmartTodo.LLM.parse_cards/2
-  # {:parsed_cards, {:ok, cards}} → assign preview_cards, set loading false
-  # {:parsed_cards, {:error, reason}} → flash error, set loading false
-  def handle_info({:parsed_cards, _result}, socket), do: {:noreply, socket}
+  # Phase 1 — Parsed card results
+  def handle_info({:parsed_cards, {:ok, cards}}, socket) do
+    {:noreply,
+     socket
+     |> assign(:preview_cards, cards)
+     |> assign(:loading, false)}
+  end
+
+  def handle_info({:parsed_cards, {:error, reason}}, socket) do
+    {:noreply,
+     socket
+     |> Phoenix.LiveView.put_flash(:error, "Failed to parse cards: #{reason}")
+     |> assign(:loading, false)}
+  end
 
   # Phase 2 — Handle tool-based command results from SmartTodo.LLM.execute_command/2
   # {:command_result, {:ok, response}} → reload board, flash the response, set loading false
@@ -209,6 +219,7 @@ defmodule SmartTodoWeb.BoardLive.Show do
   # {:detect_intent, text, component_id} → call SmartTodo.LLM.detect_intent/2 in a Task,
   #   send {:intent_result, result, component_id} back to self()
   # {:intent_result, {:ok, intents}, _} → send_update CommandInput with detected_intents
+  # {:intent_result, _, _} → send_update CommandInput with detecting: false
   def handle_info({:detect_intent, _text, _component_id}, socket), do: {:noreply, socket}
   def handle_info({:intent_result, _result, _component_id}, socket), do: {:noreply, socket}
 

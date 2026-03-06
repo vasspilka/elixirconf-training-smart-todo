@@ -16,7 +16,10 @@ defmodule SmartTodo.EvalHelpers do
 
     {:ok, backlog} = Todos.create_list(%{title: "Backlog", board_id: board.id, position: 0})
     {:ok, todo} = Todos.create_list(%{title: "To Do", board_id: board.id, position: 1})
-    {:ok, in_progress} = Todos.create_list(%{title: "In Progress", board_id: board.id, position: 2})
+
+    {:ok, in_progress} =
+      Todos.create_list(%{title: "In Progress", board_id: board.id, position: 2})
+
     {:ok, done} = Todos.create_list(%{title: "Done", board_id: board.id, position: 3})
 
     {:ok, login_card} =

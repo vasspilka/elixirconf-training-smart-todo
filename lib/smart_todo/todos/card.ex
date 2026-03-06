@@ -10,6 +10,7 @@ defmodule SmartTodo.Todos.Card do
     field :due_date, :date
     field :labels, {:array, :string}, default: []
     field :archived_at, :utc_datetime
+    field :embedding, Pgvector.Ecto.Vector
 
     belongs_to :list, SmartTodo.Todos.List
     belongs_to :board, SmartTodo.Todos.Board

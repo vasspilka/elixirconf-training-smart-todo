@@ -63,20 +63,55 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
     assign(socket, :chat_messages, socket.assigns.chat_messages ++ [user_message, stub])
   end
 
-  def handle_execute_command(socket, text, _intents \\ %{}) do
+  def handle_execute_command(socket, text, intents \\ %{}) do
     lv_pid = self()
 
     board = socket.assigns.board
-    board_context = %{board_name: board.title, lists: Enum.map(board.lists, & &1.title)}
+    board_context = %{
+      board_name: board.title,
+      lists:
+        Enum.map(board.lists, fn list ->
+          %{
+            title: list.title,
+            cards:
+              Enum.map(list.cards, fn card ->
+                %{
+                  title: card.title,
+                  priority: card.priority,
+                  labels: card.labels || [],
+                  due_date: card.due_date
+                }
+              end)
+          }
+        end)
+    }
+
+    intent_list =
+      case intents do
+        map when is_map(map) -> Map.keys(map)
+        list when is_list(list) -> list
+        _ -> []
+      end
+
+    use_preview? = only_create_cards?(intent_list)
 
     Task.start(fn ->
-      result = SmartTodo.LLM.parse_cards(text, board_context)
-      send(lv_pid, {:parsed_cards, result})
+      if use_preview? do
+        result = SmartTodo.LLM.parse_cards(text, board_context)
+        send(lv_pid, {:parsed_cards, result})
+      else
+        result = SmartTodo.LLM.execute_command(text, board.id, board_context)
+        send(lv_pid, {:command_result, result})
+      end
     end)
 
     socket
     |> assign(:command_input_open, false)
     |> assign(:loading, true)
+  end
+
+  defp only_create_cards?(intents) do
+    intents == [] or Enum.all?(intents, &(&1 in ["create_card", :create_card]))
   end
 
   def reload_board(socket) do

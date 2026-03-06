@@ -210,18 +210,56 @@ defmodule SmartTodoWeb.BoardLive.Show do
      |> assign(:loading, false)}
   end
 
-  # Phase 2 — Handle tool-based command results from SmartTodo.LLM.execute_command/2
-  # {:command_result, {:ok, response}} → reload board, flash the response, set loading false
-  # {:command_result, {:error, reason}} → flash error, set loading false
-  def handle_info({:command_result, _result}, socket), do: {:noreply, socket}
+  # Phase 2 — Handle tool-based command results
+  def handle_info({:command_result, {:ok, response}}, socket) do
+    {:noreply,
+     socket
+     |> reload_board()
+     |> Phoenix.LiveView.put_flash(:info, response)
+     |> assign(:loading, false)}
+  end
 
-  # Phase 2 — Handle intent detection from CommandInput debounce
-  # {:detect_intent, text, component_id} → call SmartTodo.LLM.detect_intent/2 in a Task,
-  #   send {:intent_result, result, component_id} back to self()
-  # {:intent_result, {:ok, intents}, _} → send_update CommandInput with detected_intents
-  # {:intent_result, _, _} → send_update CommandInput with detecting: false
-  def handle_info({:detect_intent, _text, _component_id}, socket), do: {:noreply, socket}
-  def handle_info({:intent_result, _result, _component_id}, socket), do: {:noreply, socket}
+  def handle_info({:command_result, {:error, reason}}, socket) do
+    {:noreply,
+     socket
+     |> Phoenix.LiveView.put_flash(:error, "Command failed: #{reason}")
+     |> assign(:loading, false)}
+  end
+
+  # Phase 2 — Intent detection from CommandInput debounce
+  def handle_info({:detect_intent, text, component_id}, socket) do
+    lv_pid = self()
+    board = socket.assigns.board
+    board_context = %{board_name: board.title, lists: Enum.map(board.lists, & &1.title)}
+
+    Task.start(fn ->
+      result = SmartTodo.LLM.detect_intent(text, board_context)
+      send(lv_pid, {:intent_result, result, component_id})
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:intent_result, {:ok, intents}, component_id}, socket) do
+    intent_map = Map.new(intents, &{&1, 1})
+
+    send_update(SmartTodoWeb.BoardLive.CommandInput, %{
+      id: component_id,
+      detected_intents: intent_map,
+      detecting: false
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:intent_result, _error, component_id}, socket) do
+    send_update(SmartTodoWeb.BoardLive.CommandInput, %{
+      id: component_id,
+      detecting: false
+    })
+
+    {:noreply, socket}
+  end
 
   defp parse_labels_param(%{"labels_string" => labels_string} = params) do
     labels =

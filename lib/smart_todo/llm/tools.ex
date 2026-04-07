@@ -24,11 +24,22 @@ defmodule SmartTodo.LLM.Tools do
 
   @doc "All board mutation tools plus semantic search. Used by the chat agent."
   def chat_tools(board_id) do
+    agent_tools(board_id) ++ [research_agent(board_id)]
+  end
+
+  @doc "Board tools plus semantic search, without the research agent (avoids recursion)."
+  def agent_tools(board_id) do
     all(board_id) ++ [search_cards(board_id)]
   end
 
+  @doc "Read-only board tools for preview/research modes."
+  def board_read_tools(board_id) do
+    [list_cards(board_id)]
+  end
+
   @doc "Tool names as strings, useful for intent detection."
-  def tool_names, do: ~w(list_cards create_list create_card move_card update_card archive_card)
+  def tool_names,
+    do: ~w(list_cards create_list create_card move_card update_card archive_card research)
 
   defp list_cards(board_id) do
     Function.new!(%{
@@ -297,6 +308,58 @@ defmodule SmartTodo.LLM.Tools do
         end
       end
     })
+  end
+
+  defp research_agent(board_id) do
+    Function.new!(%{
+      name: "research_agent",
+      description:
+        "Launch a research agent that searches the web and creates/updates board tasks " <>
+          "based on its findings. Use this when the user wants a comprehensive, research-based " <>
+          "plan or needs external information to inform task creation.",
+      parameters_schema: %{
+        type: "object",
+        properties: %{
+          prompt: %{
+            type: "string",
+            description: "The research goal or topic to investigate and create tasks for"
+          }
+        },
+        required: ["prompt"]
+      },
+      function: fn %{"prompt" => prompt}, _context ->
+        board = Todos.get_board_with_data!(board_id)
+        board_context = build_board_context(board)
+
+        case SmartTodo.LLM.ResearchAgent.run(prompt, board_id, board_context,
+               mode: :autonomous
+             ) do
+          {:ok, response} -> {:ok, response}
+          {:error, reason} -> {:error, "Research failed: #{reason}"}
+        end
+      end
+    })
+  end
+
+  defp build_board_context(board) do
+    %{
+      board_name: board.title,
+      lists:
+        Enum.map(board.lists, fn list ->
+          %{
+            title: list.title,
+            cards:
+              Enum.map(list.cards, fn card ->
+                %{
+                  title: card.title,
+                  priority: card.priority,
+                  labels: card.labels || [],
+                  due_date: card.due_date
+                }
+              end)
+          }
+        end)
+    }
   end
 
   defp maybe_put(map, _key, nil), do: map

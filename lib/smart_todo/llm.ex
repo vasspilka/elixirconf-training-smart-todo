@@ -114,20 +114,24 @@ defmodule SmartTodo.LLM do
   Returns `{:ok, intents}` where intents is a list of tool name strings,
   or `{:error, reason}`.
   """
-  def detect_intent(text, _board_context \\ %{}) do
+  def detect_intent(text, board_context \\ %{}) do
     system_prompt = """
     You are an intent detector for a Kanban board command input.
     The user has typed a command and you must predict which board tools they want to use.
     Return one entry per tool type that will be needed — do NOT repeat tools.
 
-    Rules:
-    - This is a task management app. If the user describes something they need to do, a reminder, or any task-like statement, that means create_card.
+    ## Current Board State
+    #{board_context_prompt(board_context)}
+
+    ## Rules
+    - IMPORTANT: If the user's text refers to a card that already exists on the board (check the board state above), use update_card or move_card — do NOT return create_card for existing cards. Only use create_card when the user is describing something genuinely new that doesn't match any existing card.
     - If the user pastes a document, spec, or long text, they want to create_card from it.
     - Do NOT interpret mentions of tool names inside the text as actions. Focus on what the user WANTS TO DO, not what the text talks about.
     - move_card: when the user implies a status change, e.g. "Mark X as done", "We finished task B", "X is in progress now".
-    - update_card: when the user implies content changed, e.g. "Requirements changed for X, now we also need Y", "Add a due date to X".
+    - update_card: when the user wants to change a card's content, priority, or due date, e.g. "Requirements changed for X, now we also need Y", "Add a due date to X", "Make X urgent", "Set X to high priority", "X is due on Friday".
     - archive_card: when the user wants to remove or discard a card, e.g. "We no longer need X", "Delete task Y".
     - create_list: when the user wants a new column/list on the board.
+    - research: when the user wants to research a topic on the web, create a comprehensive plan based on external information, or needs web research to inform task creation. E.g. "Create a plan for Kubernetes deployment", "Research best practices for CI/CD", "Look up how to set up monitoring and create tasks for it".
     - When in doubt, default to create_card.
     """
 
@@ -194,8 +198,12 @@ defmodule SmartTodo.LLM do
     #{board_context_prompt(board_context)}
 
     ## Instructions
+    - IMPORTANT: Before creating a new card, check the board state above. If the user's text refers to a card that already exists (by name or close match), use update_card or move_card instead of creating a duplicate.
+    - Only use create_card when the user is describing something genuinely new that doesn't match any existing card on the board.
     - Use the provided tools to fulfill the user's request.
     - When referring to cards or lists, match by name (case-insensitive).
+    - When the user mentions a date or deadline (e.g. "by Friday", "due next week", "on March 10th"), always set the due_date parameter. For create_card, include it in the creation. For existing cards, use update_card.
+    - When the user describes how important or urgent an existing card is (e.g. "make X urgent", "X is high priority", "X is critical"), use update_card with the priority parameter. Do NOT use move_card for priority changes.
     - After completing all actions, respond with a brief summary of what you did.
     - If you cannot find a card or list, explain what went wrong.
     """
@@ -237,9 +245,12 @@ defmodule SmartTodo.LLM do
     #{board_context_prompt(board_context)}
 
     ## Instructions
+    - IMPORTANT: Before creating a new card, check the board state above. If the user refers to a card that already exists, use update_card or move_card instead of creating a duplicate. Only use create_card for genuinely new items.
     - Use the provided tools to fulfill requests (create, move, update, archive cards/lists, or search).
     - When asked questions about cards, use search_cards for semantic search.
     - Match cards and lists by name (case-insensitive).
+    - When the user mentions a date or deadline, always set the due_date parameter. For new cards, include it in create_card. For existing cards, use update_card.
+    - When the user describes how important or urgent an existing card is, use update_card with the priority parameter.
     - Be concise and helpful in your responses.
     - Use markdown formatting for better readability.
     """
@@ -294,9 +305,9 @@ defmodule SmartTodo.LLM do
 
   defp extract_response(_), do: "Done."
 
-  defp board_context_prompt(context) when map_size(context) == 0, do: ""
+  def board_context_prompt(context) when map_size(context) == 0, do: ""
 
-  defp board_context_prompt(context) do
+  def board_context_prompt(context) do
     lists = Map.get(context, :lists, [])
     board_name = Map.get(context, :board_name, "Board")
 

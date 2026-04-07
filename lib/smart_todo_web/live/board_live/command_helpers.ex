@@ -50,6 +50,7 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
     |> assign(:command_input_open, false)
     |> assign(:available_commands, default_commands())
     |> assign(:loading, false)
+    |> assign(:loading_text, "Processing command...")
     |> assign(:streaming, false)
     |> assign(:streaming_content, "")
     |> assign(:preview_cards, [])
@@ -123,21 +124,38 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
         _ -> []
       end
 
+    is_research? = has_research_intent?(intent_list)
     use_preview? = only_create_cards?(intent_list)
 
+    loading_text =
+      if is_research?, do: "Research agent is working...", else: "Processing command..."
+
     Task.start(fn ->
-      if use_preview? do
-        result = SmartTodo.LLM.parse_cards(text, board_context)
-        send(lv_pid, {:parsed_cards, result})
-      else
-        result = SmartTodo.LLM.execute_command(text, board.id, board_context)
-        send(lv_pid, {:command_result, result})
+      cond do
+        is_research? ->
+          result =
+            SmartTodo.LLM.ResearchAgent.run(text, board.id, board_context, mode: :preview)
+
+          send(lv_pid, {:research_result, result})
+
+        use_preview? ->
+          result = SmartTodo.LLM.parse_cards(text, board_context)
+          send(lv_pid, {:parsed_cards, result})
+
+        true ->
+          result = SmartTodo.LLM.execute_command(text, board.id, board_context)
+          send(lv_pid, {:command_result, result})
       end
     end)
 
     socket
     |> assign(:command_input_open, false)
     |> assign(:loading, true)
+    |> assign(:loading_text, loading_text)
+  end
+
+  defp has_research_intent?(intents) do
+    Enum.any?(intents, &(&1 in ["research", :research]))
   end
 
   defp only_create_cards?(intents) do
@@ -216,6 +234,12 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
         description: "Archive a card from the board",
         icon: "hero-archive-box",
         tool: :archive_card
+      },
+      %{
+        name: "Research",
+        description: "Research a topic on the web and create tasks from findings",
+        icon: "hero-globe-alt",
+        tool: :research
       }
     ]
   end

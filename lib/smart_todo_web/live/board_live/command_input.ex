@@ -118,12 +118,13 @@ defmodule SmartTodoWeb.BoardLive.CommandInput do
 
     ref =
       if String.trim(value) != "" do
-        Process.send_after(self(), {:detect_intent, value, socket.assigns.myself}, @debounce_ms)
+        Process.send_after(self(), {:detect_intent, value, socket.assigns.id}, @debounce_ms)
       end
 
     {:noreply,
      socket
      |> assign(:input_value, value)
+     |> assign(:detecting, ref != nil)
      |> assign(:debounce_ref, ref)}
   end
 

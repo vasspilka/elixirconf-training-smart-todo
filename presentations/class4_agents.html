@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class 4 — Research Agents</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <style>
+    :root {
+      --r-background-color: #1a1a2e;
+      --r-main-color: #e0e0e0;
+      --r-heading-color: #a78bfa;
+      --r-link-color: #818cf8;
+    }
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal h3 { font-size: 1.15em; color: #c4b5fd; }
+    .reveal ul { text-align: left; }
+    .reveal li { margin-bottom: 0.5em; line-height: 1.35; }
+    .reveal .subtitle { color: #9ca3af; font-size: 0.8em; margin-top: 0.5em; }
+    .reveal .highlight-box {
+      background: rgba(167, 139, 250, 0.12);
+      border-left: 4px solid #a78bfa;
+      padding: 1em 1.25em;
+      border-radius: 0 8px 8px 0;
+      text-align: left;
+      margin: 1em 0;
+    }
+    .reveal .warning-box {
+      background: rgba(239, 68, 68, 0.12);
+      border-left: 4px solid #ef4444;
+      padding: 1em 1.25em;
+      border-radius: 0 8px 8px 0;
+      text-align: left;
+      margin: 1em 0;
+    }
+    .reveal .diagram {
+      font-family: monospace;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 1.2em;
+      line-height: 1.7;
+    }
+    .reveal .dim { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>Research Agents</h1>
+        <p class="subtitle">Class 4 — Building LLM-Powered Applications</p>
+        <p class="subtitle">ElixirConf EU 2026</p>
+      </section>
+
+      <section>
+        <h2>When one call is not enough</h2>
+        <ul>
+          <li>Some tasks need multiple steps</li>
+          <li>Example: research a topic, compare findings, then create tasks</li>
+          <li>That is where agents start to help</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>What is an agent?</h2>
+        <div class="highlight-box" style="font-size: 1.1em; text-align: center;">
+          An agent is an LLM in a loop:<br/>
+          <strong>plan → act → observe → repeat</strong>
+        </div>
+        <p class="dim" style="text-align: center;">Same tool-calling pattern as before, just repeated.</p>
+      </section>
+
+      <section>
+        <h2>Research agent flow</h2>
+        <div class="diagram">
+          Goal from the user<br/>
+          ↓<br/>
+          Inspect the current board<br/>
+          ↓<br/>
+          Search for relevant information<br/>
+          ↓<br/>
+          Propose cards or updates<br/>
+          ↓<br/>
+          User reviews the result
+        </div>
+      </section>
+
+      <section>
+        <h2>Keep it bounded</h2>
+        <ul>
+          <li>Use a small tool set</li>
+          <li>Limit the number of steps</li>
+          <li>Prefer review before making many changes</li>
+        </ul>
+        <div class="warning-box">
+          Agents are powerful, but they are also slower, more expensive, and less predictable.
+        </div>
+      </section>
+
+      <section>
+        <h2>What we are building now</h2>
+        <ul>
+          <li>A simple research agent for our board</li>
+          <li>Research first, then propose task cards</li>
+          <li>Keep the workflow understandable and reviewable</li>
+        </ul>
+        <p style="margin-top: 1em;">Let’s build it.</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast'
+    });
+  </script>
+</body>
+</html>

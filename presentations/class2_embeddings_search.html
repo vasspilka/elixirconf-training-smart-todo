@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class 2 — Embeddings</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <style>
+    :root {
+      --r-background-color: #1a1a2e;
+      --r-main-color: #e0e0e0;
+      --r-heading-color: #a78bfa;
+      --r-link-color: #818cf8;
+    }
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal h3 { font-size: 1.15em; color: #c4b5fd; }
+    .reveal ul { text-align: left; }
+    .reveal li { margin-bottom: 0.5em; line-height: 1.35; }
+    .reveal .subtitle { color: #9ca3af; font-size: 0.8em; margin-top: 0.5em; }
+    .reveal .highlight-box {
+      background: rgba(167, 139, 250, 0.12);
+      border-left: 4px solid #a78bfa;
+      padding: 1em 1.25em;
+      border-radius: 0 8px 8px 0;
+      text-align: left;
+      margin: 1em 0;
+    }
+    .reveal .diagram {
+      font-family: monospace;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 1.2em;
+      line-height: 1.7;
+    }
+    .reveal .vector-viz {
+      font-family: monospace;
+      font-size: 0.76em;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 10px;
+      padding: 1.2em;
+      line-height: 1.5;
+    }
+    .reveal .semantic-map {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 1em;
+      margin: 0 auto;
+      max-width: 1000px;
+    }
+    .reveal .semantic-map svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .reveal .dim { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>Embeddings</h1>
+        <p class="subtitle">Class 2 — Building LLM-Powered Applications</p>
+        <p class="subtitle">ElixirConf EU 2026</p>
+      </section>
+
+      <section>
+        <h2>The search problem</h2>
+        <ul>
+          <li>Search: <code>"authentication"</code></li>
+          <li>Cards: <code>login</code>, <code>sign-in</code>, <code>OAuth</code></li>
+          <li>Words differ, meaning overlaps</li>
+        </ul>
+        <div class="highlight-box">
+          Keyword search matches words. Semantic search matches meaning.
+        </div>
+      </section>
+
+      <section>
+        <h2>What is an embedding?</h2>
+        <ul>
+          <li>Text as numbers</li>
+          <li>Similar meaning → similar vectors</li>
+          <li>Different meaning → distant vectors</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Text becomes vectors</h2>
+        <div class="vector-viz">
+          "Deploy the API"<br/>
+          → [0.021, -0.184, 0.553, 0.091, ..., -0.337]<br/>
+          <br/>
+          "Ship the backend service"<br/>
+          → [0.019, -0.176, 0.548, 0.087, ..., -0.341]<br/>
+          <span style="color: #a78bfa;">  ↑ close vectors, similar meaning</span><br/>
+          <br/>
+          "Buy groceries"<br/>
+          → [-0.412, 0.723, -0.088, 0.641, ..., 0.195]<br/>
+          <span style="color: #f87171;">  ↑ far away, different meaning</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Similarity in semantic space</h2>
+        <div class="semantic-map">
+          <svg viewBox="0 0 900 470" role="img" aria-label="Semantic space showing words grouped by royalty and gender">
+            <line x1="120" y1="250" x2="800" y2="250" stroke="#e5e7eb" stroke-width="4" />
+            <line x1="450" y1="70" x2="450" y2="410" stroke="#e5e7eb" stroke-width="4" />
+            <polygon points="450,45 438,68 462,68" fill="#e5e7eb" />
+            <polygon points="450,435 438,412 462,412" fill="#e5e7eb" />
+            <polygon points="825,250 802,238 802,262" fill="#e5e7eb" />
+
+            <text x="470" y="42" fill="#e5e7eb" font-size="28" font-family="system-ui, sans-serif">royalty</text>
+            <text x="470" y="458" fill="#e5e7eb" font-size="28" font-family="system-ui, sans-serif">non-royalty</text>
+            <text x="135" y="238" fill="#e5e7eb" font-size="28" font-family="system-ui, sans-serif">man</text>
+            <text x="715" y="238" fill="#e5e7eb" font-size="28" font-family="system-ui, sans-serif">woman</text>
+
+            <circle cx="315" cy="150" r="10" fill="#c4b5fd" />
+            <text x="333" y="158" fill="#e5e7eb" font-size="24" font-family="system-ui, sans-serif">king</text>
+
+            <circle cx="600" cy="150" r="10" fill="#c4b5fd" />
+            <text x="618" y="158" fill="#e5e7eb" font-size="24" font-family="system-ui, sans-serif">queen</text>
+
+            <circle cx="350" cy="195" r="9" fill="#a78bfa" />
+            <text x="367" y="202" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">prince</text>
+
+            <circle cx="585" cy="195" r="9" fill="#a78bfa" />
+            <text x="602" y="202" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">princess</text>
+
+            <circle cx="385" cy="225" r="9" fill="#a78bfa" />
+            <text x="402" y="232" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">lord</text>
+
+            <circle cx="620" cy="225" r="9" fill="#a78bfa" />
+            <text x="637" y="232" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">lady</text>
+
+            <circle cx="450" cy="250" r="9" fill="#ddd6fe" />
+            <line x1="463" y1="270" x2="452" y2="256" stroke="#ddd6fe" stroke-width="3" />
+            <polygon points="452,256 448,266 458,262" fill="#ddd6fe" />
+            <text x="468" y="279" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">dude</text>
+
+
+            <circle cx="450" cy="300" r="9" fill="#ddd6fe" />
+            <text x="468" y="309" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">villager</text>
+
+            <circle cx="450" cy="350" r="9" fill="#ddd6fe" />
+            <text x="468" y="359" fill="#e5e7eb" font-size="21" font-family="system-ui, sans-serif">peasant</text>
+
+            <circle cx="305" cy="305" r="10" fill="#f9fafb" />
+            <text x="323" y="314" fill="#e5e7eb" font-size="24" font-family="system-ui, sans-serif">man</text>
+
+            <circle cx="590" cy="305" r="10" fill="#f9fafb" />
+            <text x="608" y="314" fill="#e5e7eb" font-size="24" font-family="system-ui, sans-serif">woman</text>
+          </svg>
+        </div>
+        <p class="dim">Nearby points capture related meaning and relationships.</p>
+      </section>
+
+      <section>
+        <h2>How it works</h2>
+        <div class="diagram">
+          Cards → vectors<br/>
+          ↓<br/>
+          Query → vector<br/>
+          ↓<br/>
+          Compare distances<br/>
+          ↓<br/>
+          Rank results
+        </div>
+      </section>
+
+      <section>
+        <h2>Closeness is the key idea</h2>
+        <ul>
+          <li>Compare vectors by distance</li>
+          <li><strong>Closer = more relevant</strong></li>
+        </ul>
+        <div class="highlight-box">
+          We do not search for matching words. We search for nearby meaning.
+        </div>
+      </section>
+
+      <section>
+        <h2>Why this matters</h2>
+        <ul>
+          <li><strong>Search</strong></li>
+          <li><strong>Chat</strong></li>
+          <li><strong>Agents</strong></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>What we are building now</h2>
+        <ul>
+          <li>Embed cards</li>
+          <li>Store vectors in PostgreSQL</li>
+          <li>Rank semantic matches</li>
+        </ul>
+        <p style="margin-top: 1em;">Let’s build it.</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast'
+    });
+  </script>
+</body>
+</html>

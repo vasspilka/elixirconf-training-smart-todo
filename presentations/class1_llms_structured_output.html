@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class 1 — LLMs, Structured Output & Tools</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <style>
+    :root {
+      --r-background-color: #1a1a2e;
+      --r-main-color: #e0e0e0;
+      --r-heading-color: #a78bfa;
+      --r-link-color: #818cf8;
+    }
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal h3 { font-size: 1.15em; color: #c4b5fd; }
+    .reveal ul { text-align: left; }
+    .reveal li { margin-bottom: 0.5em; line-height: 1.35; }
+    .reveal .subtitle { color: #9ca3af; font-size: 0.8em; margin-top: 0.5em; }
+    .reveal .highlight-box {
+      background: rgba(167, 139, 250, 0.12);
+      border-left: 4px solid #a78bfa;
+      padding: 1em 1.25em;
+      border-radius: 0 8px 8px 0;
+      text-align: left;
+      margin: 1em 0;
+    }
+    .reveal .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2em;
+      text-align: left;
+    }
+    .reveal .dim { color: #94a3b8; }
+    .reveal .diagram {
+      font-family: monospace;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 1.2em;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>LLMs</h1>
+        <p class="subtitle">Class 1 — Building LLM-Powered Applications</p>
+        <p class="subtitle">ElixirConf EU 2026</p>
+      </section>
+
+      <section>
+        <h2>What is an LLM?</h2>
+        <ul>
+          <li>Token prediction systems</li>
+          <li>Trained on public knowledge</li>
+          <li>Predictable but non-deterministic by default</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Api controls</h2>
+        <ul>
+          <li><strong>Randomness</strong> — temprature, top_t (predictable <> unpredictable)</li>
+          <li><strong>Response Format</strong> — Output management</li>
+          <li><strong>Tools</strong> — how much text fits in one request</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Harness Engineering</h2>
+        <ul>
+          <li>Prompt Engineering (instructions)</li>
+          <li>Context Engineering (input knowledge including tools)</li>
+          <li>Flow control (behaviour)</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Response Format</h2>
+        <div class="two-col">
+          <div>
+            <h3>Structured output</h3>
+            <ul>
+              <li>JSON / schema-shaped</li>
+              <li>Easy to validate</li>
+              <li>Deterministic shape</li>
+              <li>Safe to turn into app actions</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Tool calling</h2>
+        <div class="diagram">
+          User request<br/>
+          ↓<br/>
+          LLM chooses a tool + arguments<br/>
+          ↓<br/>
+          Your app runs the tool<br/>
+          ↓<br/>
+          UI updates / result returns
+        </div>
+        <p class="dim">The model decides what to do. Your code decides how it happens.</p>
+      </section>
+
+      <section>
+        <h2>Evaluation and predictability</h2>
+        <ul>
+          <li>Keep the tool set small</li>
+          <li>Models tend get confused with conflicting/too much context</li>
+          <li>Use evaluation tests to check important behaviors</li>
+        </ul>
+        <div class="highlight-box">
+          Good AI features are not just smart — they are constrained and testable.
+        </div>
+      </section>
+
+      <section>
+        <h2>What we are building now</h2>
+        <ul>
+          <li>LLM call + structured task output</li>
+          <li>Preview-and-accept flow for new cards</li>
+          <li>Tool-based board actions from natural language</li>
+        </ul>
+        <p style="margin-top: 1em;">Let’s build it.</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast'
+    });
+  </script>
+</body>
+</html>

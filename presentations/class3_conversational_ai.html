@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class 3 — Chat, Context & Streaming</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+  <style>
+    :root {
+      --r-background-color: #1a1a2e;
+      --r-main-color: #e0e0e0;
+      --r-heading-color: #a78bfa;
+      --r-link-color: #818cf8;
+    }
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+    .reveal h1 { font-size: 2.2em; }
+    .reveal h2 { font-size: 1.6em; }
+    .reveal h3 { font-size: 1.15em; color: #c4b5fd; }
+    .reveal ul { text-align: left; }
+    .reveal li { margin-bottom: 0.5em; line-height: 1.35; }
+    .reveal .subtitle { color: #9ca3af; font-size: 0.8em; margin-top: 0.5em; }
+    .reveal .highlight-box {
+      background: rgba(167, 139, 250, 0.12);
+      border-left: 4px solid #a78bfa;
+      padding: 1em 1.25em;
+      border-radius: 0 8px 8px 0;
+      text-align: left;
+      margin: 1em 0;
+    }
+    .reveal .diagram {
+      font-family: monospace;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 1.2em;
+      line-height: 1.7;
+    }
+    .reveal .dim { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>Chat, Context & Streaming</h1>
+        <p class="subtitle">Class 3 — Building LLM-Powered Applications</p>
+        <p class="subtitle">ElixirConf EU 2026</p>
+      </section>
+
+      <section>
+        <h2>LLMs are stateless</h2>
+        <ul>
+          <li>The model does not remember previous calls</li>
+          <li>Every request is independent</li>
+          <li>Conversation memory is something <em>we</em> build</li>
+        </ul>
+        <div class="highlight-box">
+          “Memory” is just the message history you send back each time.
+        </div>
+      </section>
+
+      <section>
+        <h2>Chat = a message list</h2>
+        <ul>
+          <li><strong>System</strong> — rules and context</li>
+          <li><strong>User</strong> — what the human said</li>
+          <li><strong>Assistant</strong> — previous model replies</li>
+        </ul>
+        <p class="dim">On each turn, you resend the conversation state.</p>
+      </section>
+
+      <section>
+        <h2>Context is a budget</h2>
+        <ul>
+          <li>Conversation history consumes tokens</li>
+          <li>You cannot keep everything forever</li>
+          <li>Keep the important context, not all context</li>
+        </ul>
+        <div class="highlight-box">
+          Good chat systems choose what the model should remember.
+        </div>
+      </section>
+
+      <section>
+        <h2>RAG keeps answers grounded</h2>
+        <div class="diagram">
+          User asks a question<br/>
+          ↓<br/>
+          Retrieve relevant cards<br/>
+          ↓<br/>
+          Add them to the prompt<br/>
+          ↓<br/>
+          Generate an answer based on real board data
+        </div>
+        <p class="dim">This is where embeddings become useful in chat.</p>
+      </section>
+
+      <section>
+        <h2>Streaming improves UX</h2>
+        <ul>
+          <li>Without streaming: wait for the whole answer</li>
+          <li>With streaming: show the answer as it is generated</li>
+          <li>Same model, better user experience</li>
+        </ul>
+        <div class="highlight-box">
+          Streaming makes the assistant feel responsive and alive.
+        </div>
+      </section>
+
+      <section>
+        <h2>What we are building now</h2>
+        <ul>
+          <li>A board-aware chat assistant</li>
+          <li>Relevant board context on each turn</li>
+          <li>Streaming responses in the UI</li>
+        </ul>
+        <p style="margin-top: 1em;">Let’s build it.</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast'
+    });
+  </script>
+</body>
+</html>

@@ -30,9 +30,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      assert_trajectory chain, [
-        %{name: "move_card", arguments: nil}
-      ], mode: :superset, args: :subset
+      assert_trajectory(
+        chain,
+        [
+          %{name: "move_card", arguments: nil}
+        ], mode: :superset, args: :subset)
 
       # Verify the card actually moved
       card = Todos.get_card_by_title(board.id, "Fix login bug")
@@ -72,9 +74,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      assert_trajectory chain, [
-        %{name: "archive_card", arguments: nil}
-      ], mode: :superset
+      assert_trajectory(
+        chain,
+        [
+          %{name: "archive_card", arguments: nil}
+        ], mode: :superset)
 
       # The "Code review for payments" card was in Done — verify it's archived
       updated = Todos.get_card!(cards.review.id)
@@ -91,9 +95,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      assert_trajectory chain, [
-        %{name: "archive_card", arguments: nil}
-      ], mode: :superset
+      assert_trajectory(
+        chain,
+        [
+          %{name: "archive_card", arguments: nil}
+        ], mode: :superset)
 
       updated = Todos.get_card!(cards.docs.id)
       assert updated.archived_at != nil
@@ -111,9 +117,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      assert_trajectory chain, [
-        %{name: "create_card", arguments: %{"list_name" => "To Do"}}
-      ], mode: :superset, args: :subset
+      assert_trajectory(
+        chain,
+        [
+          %{name: "create_card", arguments: %{"list_name" => "To Do"}}
+        ], mode: :superset, args: :subset)
 
       card = Todos.get_card_by_title(board.id, "Add unit tests")
       assert card != nil
@@ -131,9 +139,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      assert_trajectory chain, [
-        %{name: "update_card", arguments: nil}
-      ], mode: :superset
+      assert_trajectory(
+        chain,
+        [
+          %{name: "update_card", arguments: nil}
+        ], mode: :superset)
 
       updated = Todos.get_card!(cards.docs.id)
       assert updated.priority == :urgent
@@ -151,9 +161,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      assert_trajectory chain, [
-        %{name: "create_list", arguments: %{"title" => "QA Review"}}
-      ], mode: :superset, args: :subset
+      assert_trajectory(
+        chain,
+        [
+          %{name: "create_list", arguments: %{"title" => "QA Review"}}
+        ], mode: :superset, args: :subset)
 
       list = Todos.get_list_by_title(board.id, "QA Review")
       assert list != nil
@@ -173,10 +185,12 @@ defmodule SmartTodo.LLM.EvalsTest do
 
       trajectory = Trajectory.from_chain(chain)
 
-      assert_trajectory trajectory, [
-        %{name: "create_list", arguments: nil},
-        %{name: "create_card", arguments: nil}
-      ], mode: :superset
+      assert_trajectory(
+        trajectory,
+        [
+          %{name: "create_list", arguments: nil},
+          %{name: "create_card", arguments: nil}
+        ], mode: :superset)
 
       list = Todos.get_list_by_title(board.id, "Testing")
       assert list != nil
@@ -196,9 +210,11 @@ defmodule SmartTodo.LLM.EvalsTest do
           context
         )
 
-      refute_trajectory chain, [
-        %{name: "archive_card", arguments: nil}
-      ], mode: :superset
+      refute_trajectory(
+        chain,
+        [
+          %{name: "archive_card", arguments: nil}
+        ], mode: :superset)
     end
   end
 
@@ -225,5 +241,4 @@ defmodule SmartTodo.LLM.EvalsTest do
       end
     end
   end
-
 end

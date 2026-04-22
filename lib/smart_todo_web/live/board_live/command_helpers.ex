@@ -67,6 +67,7 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
     lv_pid = self()
 
     board = socket.assigns.board
+
     board_context = %{
       board_name: board.title,
       lists:

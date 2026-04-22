@@ -32,7 +32,11 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
       end
 
       def handle_event("clear_chat", _params, socket) do
-        {:noreply, Phoenix.Component.assign(socket, :chat_messages, [])}
+        {:noreply,
+         socket
+         |> Phoenix.Component.assign(:chat_messages, [])
+         |> Phoenix.Component.assign(:streaming, false)
+         |> Phoenix.Component.assign(:streaming_content, "")}
       end
     end
   end
@@ -46,21 +50,46 @@ defmodule SmartTodoWeb.BoardLive.CommandHelpers do
     |> assign(:command_input_open, false)
     |> assign(:available_commands, default_commands())
     |> assign(:loading, false)
+    |> assign(:streaming, false)
+    |> assign(:streaming_content, "")
     |> assign(:preview_cards, [])
   end
 
-  ## TODO: Implement this
-  # Replace the stub response with an actual LLM call.
-  # Phase 5: integrate with the chat agent and stream responses.
   def handle_chat_message(socket, text) do
     user_message = %{role: :user, content: text}
+    messages = socket.assigns.chat_messages ++ [user_message]
 
-    stub = %{
-      role: :assistant,
-      content: "I'm not connected to an LLM yet. We'll wire this up soon!"
+    board = socket.assigns.board
+    lv_pid = self()
+
+    board_context = %{
+      board_name: board.title,
+      lists:
+        Enum.map(board.lists, fn list ->
+          %{
+            title: list.title,
+            cards:
+              Enum.map(list.cards, fn card ->
+                %{
+                  title: card.title,
+                  priority: card.priority,
+                  labels: card.labels || [],
+                  due_date: card.due_date
+                }
+              end)
+          }
+        end)
     }
 
-    assign(socket, :chat_messages, socket.assigns.chat_messages ++ [user_message, stub])
+    Task.start(fn ->
+      result = SmartTodo.LLM.chat(messages, board.id, board_context, lv_pid)
+      send(lv_pid, {:chat_complete, result})
+    end)
+
+    socket
+    |> assign(:chat_messages, messages)
+    |> assign(:streaming, true)
+    |> assign(:streaming_content, "")
   end
 
   def handle_execute_command(socket, text, intents \\ %{}) do

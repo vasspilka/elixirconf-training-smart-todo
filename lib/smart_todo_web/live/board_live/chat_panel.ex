@@ -28,6 +28,7 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
               class="btn btn-ghost btn-xs"
               phx-click="clear_chat"
               title="Clear conversation"
+              disabled={@streaming}
             >
               <.icon name="hero-arrow-path" class="size-4" />
             </button>
@@ -40,7 +41,7 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
         <%!-- Messages --%>
         <div class="flex-1 overflow-y-auto p-3 space-y-3" id="chat-messages" phx-hook="ChatScroll">
           <div
-            :if={@messages == []}
+            :if={@messages == [] and !@streaming}
             class="flex flex-col items-center justify-center h-full text-base-content/40"
           >
             <.icon name="hero-chat-bubble-left-right" class="size-10 mb-2" />
@@ -56,12 +57,19 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
               "chat-bubble text-sm",
               if(msg.role == :user, do: "chat-bubble-primary", else: "chat-bubble-neutral")
             ]}>
-              {msg.content}
+              <div :if={msg.role == :assistant} class="chat-markdown">
+                {Phoenix.HTML.raw(render_markdown(msg.content))}
+              </div>
+              <span :if={msg.role == :user}>{msg.content}</span>
             </div>
           </div>
 
-          <div :if={@loading} class="chat chat-start">
-            <div class="chat-bubble chat-bubble-neutral">
+          <%!-- Streaming response --%>
+          <div :if={@streaming} class="chat chat-start">
+            <div class="chat-bubble chat-bubble-neutral text-sm">
+              <div :if={@streaming_content != ""} class="chat-markdown">
+                {Phoenix.HTML.raw(render_markdown(@streaming_content))}
+              </div>
               <span class="loading loading-dots loading-sm"></span>
             </div>
           </div>
@@ -79,11 +87,12 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
             <input
               type="text"
               name="message"
-              placeholder="Ask AI..."
+              placeholder={if @streaming, do: "Waiting for response...", else: "Ask AI..."}
               class="input input-sm input-bordered flex-1"
               autocomplete="off"
+              disabled={@streaming}
             />
-            <button type="submit" class="btn btn-primary btn-sm">
+            <button type="submit" class="btn btn-primary btn-sm" disabled={@streaming}>
               <.icon name="hero-paper-airplane" class="size-4" />
             </button>
           </form>
@@ -93,11 +102,20 @@ defmodule SmartTodoWeb.BoardLive.ChatPanel do
     """
   end
 
+  defp render_markdown(text) when is_binary(text) do
+    case MDEx.to_html(text) do
+      {:ok, html} -> html
+      {:error, _} -> Phoenix.HTML.html_escape(text) |> Phoenix.HTML.safe_to_string()
+    end
+  end
+
+  defp render_markdown(_), do: ""
+
   @impl true
   def handle_event("send_chat_message", %{"message" => message}, socket) do
     text = String.trim(message)
 
-    if text != "" do
+    if text != "" and not socket.assigns.streaming do
       send(self(), {:chat_message, text})
     end
 

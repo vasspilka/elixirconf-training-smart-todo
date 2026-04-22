@@ -217,6 +217,83 @@ defmodule SmartTodo.LLM do
     end
   end
 
+  @doc """
+  Runs a streaming chat conversation with tools.
+
+  Takes a list of conversation messages, board_id, board_context, and the
+  LiveView pid to stream deltas to. Sends `{:chat_delta, text}` for each
+  text chunk and returns `{:ok, response}` or `{:error, reason}` when done.
+  """
+  def chat(messages, board_id, board_context, lv_pid) do
+    today = Date.utc_today() |> Date.to_iso8601()
+
+    system_prompt = """
+    You are a helpful AI assistant for a Kanban board called SmartTodo.
+    You can answer questions about the board, help manage tasks, and search for cards.
+
+    Today's date is #{today}.
+
+    ## Current Board State
+    #{board_context_prompt(board_context)}
+
+    ## Instructions
+    - Use the provided tools to fulfill requests (create, move, update, archive cards/lists, or search).
+    - When asked questions about cards, use search_cards for semantic search.
+    - Match cards and lists by name (case-insensitive).
+    - Be concise and helpful in your responses.
+    - Use markdown formatting for better readability.
+    """
+
+    handler = %{
+      on_llm_new_delta: fn _model, deltas ->
+        Enum.each(List.wrap(deltas), fn delta ->
+          text = delta_text(delta)
+          if text not in [nil, ""], do: send(lv_pid, {:chat_delta, text})
+        end)
+      end
+    }
+
+    tools = Tools.chat_tools(board_id)
+    model = chat_model(%{stream: true})
+
+    chain_messages =
+      [Message.new_system!(system_prompt)] ++
+        Enum.map(messages, fn
+          %{role: :user, content: content} -> Message.new_user!(content)
+          %{role: :assistant, content: content} -> Message.new_assistant!(content)
+        end)
+
+    chain =
+      %{llm: model, verbose: false}
+      |> LLMChain.new!()
+      |> LLMChain.add_callback(handler)
+      |> LLMChain.add_tools(tools)
+
+    chain = Enum.reduce(chain_messages, chain, &LLMChain.add_message(&2, &1))
+
+    case LLMChain.run(chain, mode: :while_needs_response) do
+      {:ok, updated_chain} ->
+        response = extract_response(updated_chain.last_message)
+        {:ok, response}
+
+      {:error, _chain, %LangChain.LangChainError{message: message}} ->
+        {:error, message}
+    end
+  end
+
+  defp delta_text(%{content: %{type: :text, content: text}}) when is_binary(text), do: text
+  defp delta_text(%{content: content}) when is_binary(content), do: content
+  defp delta_text(_), do: nil
+
+  defp extract_response(%Message{content: content}) when is_binary(content), do: content
+
+  defp extract_response(%Message{content: [%{content: content} | _]}), do: content
+
+  defp extract_response(%Message{content: content}) when is_list(content),
+    do: Enum.map_join(content, "\n", & &1)
+
+  defp extract_response(_), do: "Done."
+
   defp board_context_prompt(context) when map_size(context) == 0, do: ""
 
   defp board_context_prompt(context) do

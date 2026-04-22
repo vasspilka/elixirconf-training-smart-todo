@@ -183,6 +183,36 @@ defmodule SmartTodoWeb.BoardLive.Show do
     {:noreply, CommandHelpers.handle_chat_message(socket, text)}
   end
 
+  # Phase 5 — Streaming chat
+  def handle_info({:chat_delta, text}, socket) when is_binary(text) do
+    if socket.assigns.streaming do
+      {:noreply, assign(socket, :streaming_content, socket.assigns.streaming_content <> text)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info({:chat_complete, {:ok, response}}, socket) do
+    assistant_message = %{role: :assistant, content: response}
+
+    {:noreply,
+     socket
+     |> assign(:chat_messages, socket.assigns.chat_messages ++ [assistant_message])
+     |> assign(:streaming, false)
+     |> assign(:streaming_content, "")
+     |> reload_board()}
+  end
+
+  def handle_info({:chat_complete, {:error, reason}}, socket) do
+    error_message = %{role: :assistant, content: "Sorry, something went wrong: #{reason}"}
+
+    {:noreply,
+     socket
+     |> assign(:chat_messages, socket.assigns.chat_messages ++ [error_message])
+     |> assign(:streaming, false)
+     |> assign(:streaming_content, "")}
+  end
+
   def handle_info({:execute_command, text, intents}, socket) do
     {:noreply, CommandHelpers.handle_execute_command(socket, text, intents)}
   end

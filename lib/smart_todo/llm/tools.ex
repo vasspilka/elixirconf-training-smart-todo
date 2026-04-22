@@ -22,6 +22,11 @@ defmodule SmartTodo.LLM.Tools do
     ]
   end
 
+  @doc "All board mutation tools plus semantic search. Used by the chat agent."
+  def chat_tools(board_id) do
+    all(board_id) ++ [search_cards(board_id)]
+  end
+
   @doc "Tool names as strings, useful for intent detection."
   def tool_names, do: ~w(list_cards create_list create_card move_card update_card archive_card)
 
@@ -250,6 +255,45 @@ defmodule SmartTodo.LLM.Tools do
           end
         else
           {:error, "Card '#{card_name}' not found"}
+        end
+      end
+    })
+  end
+
+  defp search_cards(board_id) do
+    Function.new!(%{
+      name: "search_cards",
+      description:
+        "Search for cards by meaning using semantic search. " <>
+          "Finds cards related to a topic even if they use different words. " <>
+          "Use this to answer questions about existing cards.",
+      parameters_schema: %{
+        type: "object",
+        properties: %{
+          query: %{type: "string", description: "The search query to find relevant cards"}
+        },
+        required: ["query"]
+      },
+      function: fn %{"query" => query}, _context ->
+        case SmartTodo.Embeddings.search(query, board_id: board_id, limit: 5) do
+          {:ok, []} ->
+            {:ok, "No matching cards found."}
+
+          {:ok, results} ->
+            board = Todos.get_board_with_data!(board_id)
+            list_map = Map.new(board.lists, fn l -> {l.id, l.title} end)
+
+            summary =
+              Enum.map_join(results, "\n", fn {card, score} ->
+                list_name = Map.get(list_map, card.list_id, "Unknown")
+
+                "- #{card.title} (similarity: #{Float.round(score, 2)}, list: \"#{list_name}\", priority: #{card.priority})"
+              end)
+
+            {:ok, summary}
+
+          {:error, _} ->
+            {:ok, "Semantic search is not available. Cards may not be indexed yet."}
         end
       end
     })

@@ -225,6 +225,45 @@ defmodule SmartTodoWeb.BoardLive.Show do
     {:noreply, assign(socket, :preview_cards, [])}
   end
 
+  # Phase 6 — Research agent results (preview mode)
+  def handle_info({:research_result, {:ok, text}}, socket) do
+    lv_pid = self()
+    board = socket.assigns.board
+
+    board_context = %{
+      board_name: board.title,
+      lists:
+        Enum.map(board.lists, fn list ->
+          %{
+            title: list.title,
+            cards:
+              Enum.map(list.cards, fn card ->
+                %{
+                  title: card.title,
+                  priority: card.priority,
+                  labels: card.labels || [],
+                  due_date: card.due_date
+                }
+              end)
+          }
+        end)
+    }
+
+    Task.start(fn ->
+      result = SmartTodo.LLM.parse_cards(text, board_context)
+      send(lv_pid, {:parsed_cards, result})
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:research_result, {:error, reason}}, socket) do
+    {:noreply,
+     socket
+     |> Phoenix.LiveView.put_flash(:error, "Research failed: #{reason}")
+     |> assign(:loading, false)}
+  end
+
   # Phase 1 — Parsed card results
   def handle_info({:parsed_cards, {:ok, cards}}, socket) do
     {:noreply,
@@ -260,7 +299,24 @@ defmodule SmartTodoWeb.BoardLive.Show do
   def handle_info({:detect_intent, text, component_id}, socket) do
     lv_pid = self()
     board = socket.assigns.board
-    board_context = %{board_name: board.title, lists: Enum.map(board.lists, & &1.title)}
+    board_context = %{
+      board_name: board.title,
+      lists:
+        Enum.map(board.lists, fn list ->
+          %{
+            title: list.title,
+            cards:
+              Enum.map(list.cards, fn card ->
+                %{
+                  title: card.title,
+                  priority: card.priority,
+                  labels: card.labels || [],
+                  due_date: card.due_date
+                }
+              end)
+          }
+        end)
+    }
 
     Task.start(fn ->
       result = SmartTodo.LLM.detect_intent(text, board_context)
@@ -271,13 +327,15 @@ defmodule SmartTodoWeb.BoardLive.Show do
   end
 
   def handle_info({:intent_result, {:ok, intents}, component_id}, socket) do
-    intent_map = Map.new(intents, &{&1, 1})
+    if socket.assigns.command_input_open do
+      intent_map = Map.new(intents, &{&1, 1})
 
-    send_update(SmartTodoWeb.BoardLive.CommandInput, %{
-      id: component_id,
-      detected_intents: intent_map,
-      detecting: false
-    })
+      send_update(SmartTodoWeb.BoardLive.CommandInput, %{
+        id: component_id,
+        detected_intents: intent_map,
+        detecting: false
+      })
+    end
 
     {:noreply, socket}
   end
